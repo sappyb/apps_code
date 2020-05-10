@@ -202,7 +202,8 @@ struct dragonfly_param
     int total_terminals;
     int num_global_channels;
     int num_qos_levels;
-    int * qos_bandwidths;
+    int * qos_min_bws;
+    int * qos_max_bws;
     double cn_delay;
     double local_delay;
     double global_delay;
@@ -266,8 +267,9 @@ typedef enum qos_priority
 
 typedef enum qos_status
 {
-    Q_ACTIVE = 1,
-    Q_OVERBW,
+    Q_ACTIVE_UNSATED = 1,
+    Q_ACTIVE_SATED,
+    Q_INACTIVE,
 } qos_status;
 
 // Used to denote whether a connection is one that would allow a packet to continue along a minimal path or not
@@ -1417,31 +1419,51 @@ static void dragonfly_read_config(const char * anno, dragonfly_param *params)
             fprintf(stderr, "Number of QOS levels not specified, setting to %d\n", p->num_qos_levels);
     }
 
-    char qos_levels_str[MAX_NAME_LENGTH];
-    rc = configuration_get_value(&config, "PARAMS", "qos_bandwidth", anno, qos_levels_str, MAX_NAME_LENGTH);
-    p->qos_bandwidths = (int*)calloc(p->num_qos_levels, sizeof(int));
+    char qos_min_bws_str[MAX_NAME_LENGTH];
+    rc = configuration_get_value(&config, "PARAMS", "qos_min_bws", anno, qos_min_bws_str, MAX_NAME_LENGTH);
+    p->qos_min_bws = (int*)calloc(p->num_qos_levels, sizeof(int));
+
+    char qos_max_bws_str[MAX_NAME_LENGTH];
+    rc = configuration_get_value(&config, "PARAMS", "qos_max_bws", anno, qos_max_bws_str, MAX_NAME_LENGTH);
+    p->qos_max_bws = (int*)calloc(p->num_qos_levels, sizeof(int));
 
     if(p->num_qos_levels > 1)
     {
         int total_bw = 0;
         char * token;
-        token = strtok(qos_levels_str, ",");
+        token = strtok(qos_min_bws_str, ",");
         int i = 0;
         while(token != NULL)
         {
-            sscanf(token, "%d", &p->qos_bandwidths[i]);
-            total_bw += p->qos_bandwidths[i];
-            if(p->qos_bandwidths[i] <= 0)
+            sscanf(token, "%d", &p->qos_min_bws[i]);
+            total_bw += p->qos_min_bws[i];
+            if(p->qos_min_bws[i] <= 0)
             {
-                tw_error(TW_LOC, "\n Invalid bandwidth levels");
+                tw_error(TW_LOC, "\n Invalid min qos bandwidth provided");
             }
             i++;
             token = strtok(NULL,",");
         }
         assert(total_bw <= 100);
+
+        token = strtok(qos_max_bws_str, ",");
+        i = 0;
+        while(token != NULL)
+        {
+            sscanf(token, "%d", &p->qos_max_bws[i]);
+            if(p->qos_max_bws[i] <= 0)
+            {
+                tw_error(TW_LOC, "\n Invalid max qos bandwidth provided");
+            }
+            i++;
+            token = strtok(NULL,",");
+        }
     }
-    else
-        p->qos_bandwidths[0] = 100;
+    else{
+        p->qos_min_bws[0] = 0;
+        p->qos_max_bws[0] = 100;
+    }
+
     rc = configuration_get_value_double(&config, "PARAMS", "max_qos_monitor", anno, &max_qos_monitor);
     if(rc) {
         if(!myRank)
@@ -1832,7 +1854,7 @@ int get_vcg_from_category(terminal_dally_message * msg)
 
 static int get_term_bandwidth_consumption(terminal_state * s, int qos_lvl)
 {
-    assert(qos_lvl >= Q_HIGH && qos_lvl <= Q_LOW);
+    //assert(qos_lvl >= Q_HIGH && qos_lvl <= Q_LOW);
 
     //tw_stime reset_window_s = ns_to_s(bw_reset_window); 
     //double bw_gib = bytes_to_gigabytes(s->qos_data[qos_lvl]);
@@ -1850,7 +1872,7 @@ static int get_term_bandwidth_consumption(terminal_state * s, int qos_lvl)
 /* TODO: Differentiate between local and global bandwidths. */
 static int get_rtr_bandwidth_consumption(router_state * s, int qos_lvl, int output_port)
 {
-    assert(qos_lvl >= Q_HIGH && qos_lvl <= Q_LOW);
+    //assert(qos_lvl >= Q_HIGH && qos_lvl <= Q_LOW);
     assert(output_port < s->params->intra_grp_radix + s->params->num_global_channels + s->params->num_cn);
 
     int bandwidth = s->params->cn_bandwidth;
@@ -1919,7 +1941,7 @@ void issue_bw_monitor_event(terminal_state * s, tw_bf * bf, terminal_dally_messa
     /* Reset the qos status and bandwidth consumption. */
     for(int i = 0; i < num_qos_levels; i++)
     {
-        s->qos_status[i] = Q_ACTIVE;
+        s->qos_status[i] = Q_ACTIVE_UNSATED;
         s->qos_data[i] = 0;
     }
 
@@ -2010,7 +2032,7 @@ void issue_rtr_bw_monitor_event(router_state *s, tw_bf *bf, terminal_dally_messa
     {
         for(int j = 0; j < num_qos_levels; j++)
         {
-            s->qos_status[i][j] = Q_ACTIVE;
+            s->qos_status[i][j] = Q_ACTIVE_SATED;
             s->qos_data[i][j] = 0;
         }
         s->busy_time_sample[i] = 0;
@@ -2044,20 +2066,29 @@ static int get_next_vcg(terminal_state * s, tw_bf * bf, terminal_dally_message *
 
     int bw_consumption[num_qos_levels];
 
-    /* First make sure the bandwidth consumptions are up to date. */
+    /* KBEdit: This should be done AFTER the vcg has been selected. */
+    /* First make sure the bandwidth consumption and status are up to date. */
     for(int k = 0; k < num_qos_levels; k++)
     {
-        if(s->qos_status[k] != Q_OVERBW)
+        if(s->qos_status[k] != Q_INACTIVE)
         {
             bw_consumption[k] = get_term_bandwidth_consumption(s, k);
-            if(bw_consumption[k] > s->params->qos_bandwidths[k]) 
+            if(bw_consumption[k] > s->params->qos_max_bws[k]) 
             {
+                /* This should be fixed for accurate reverse computation
                 if(k == 0)
                     msg->qos_reset1 = 1;
                 else if(k == 1)
                     msg->qos_reset2 = 1;
+                */
 
-                s->qos_status[k] = Q_OVERBW;
+                /* Deactivate the class since it has exceeded the bw cap. */
+                s->qos_status[k] = Q_INACTIVE;
+            }
+            else if(bw_consumption[k] > s->params->qos_min_bws[k])
+            {
+                /* The class has meet its minimim bw guarantee requirement. */
+                s->qos_status[k] = Q_ACTIVE_SATED;
             }
         }
     }
@@ -2065,9 +2096,20 @@ static int get_next_vcg(terminal_state * s, tw_bf * bf, terminal_dally_message *
     * priority traffic first. */
     if(BW_MONITOR == 1)
     {
+        /* Check classes that have not met their bw requirement. */
         for(int i = 0; i < num_qos_levels; i++)
         {
-            if(s->qos_status[i] == Q_ACTIVE)
+            if(s->qos_status[i] == Q_ACTIVE_UNSATED)
+            {
+                if(s->terminal_msgs[i] != NULL && s->vc_occupancy[i] + s->params->chunk_size <= s->params->cn_vc_size)
+                    return i;
+            }
+        }
+
+        /* Check classes that have met their bw requirement. */
+        for(int i = 0; i < num_qos_levels; i++)
+        {
+            if(s->qos_status[i] == Q_ACTIVE_SATED)
             {
                 if(s->terminal_msgs[i] != NULL && s->vc_occupancy[i] + s->params->chunk_size <= s->params->cn_vc_size)
                     return i;
@@ -2111,21 +2153,28 @@ static int get_next_router_vcg(router_state * s, tw_bf * bf, terminal_dally_mess
     {
         for(int k = 0; k < num_qos_levels; k++)
         {
-            if(s->qos_status[output_port][k] != Q_OVERBW)
+            if(s->qos_status[output_port][k] != Q_INACTIVE)
             {
                 bw_consumption[k] = get_rtr_bandwidth_consumption(s, k, output_port);
-                if(bw_consumption[k] > s->params->qos_bandwidths[k]) 
+                if(bw_consumption[k] > s->params->qos_max_bws[k]) 
                 {
         //            printf("\n Router %d QoS %d exceeded allowed bandwidth %d ", s->router_id, k, bw_consumption[k]);
+                    /*
                     if(k == 0)
                         msg->qos_reset1 = 1;   
                     else if(k == 1)
                         msg->qos_reset2 = 1;
-
-                    s->qos_status[output_port][k] = Q_OVERBW;
+                    */
+                    s->qos_status[output_port][k] = Q_INACTIVE;
+                }
+                if(bw_consumption[k] > s->params->qos_min_bws[k]) 
+                {
+                    s->qos_status[output_port][k] = Q_ACTIVE_SATED;
                 }
             }
         }
+
+        // The following seem unused.
         int vc_size = s->params->global_vc_size;
         if(output_port < s->params->intra_grp_radix)
             vc_size = s->params->local_vc_size;
@@ -2134,7 +2183,19 @@ static int get_next_router_vcg(router_state * s, tw_bf * bf, terminal_dally_mess
         * priority traffic first. */
         for(int i = 0; i < num_qos_levels; i++)
         {
-            if(s->qos_status[output_port][i] == Q_ACTIVE)
+            if(s->qos_status[output_port][i] == Q_ACTIVE_UNSATED)
+            {
+                int base_limit = i * vcs_per_qos;
+                for(int k = base_limit; k < base_limit + vcs_per_qos; k ++)
+                {
+                    if(s->pending_msgs[output_port][k] != NULL)
+                        return k;
+                }
+            }
+        }
+        for(int i = 0; i < num_qos_levels; i++)
+        {
+            if(s->qos_status[output_port][i] == Q_ACTIVE_SATED)
             {
                 int base_limit = i * vcs_per_qos;
                 for(int k = base_limit; k < base_limit + vcs_per_qos; k ++)
@@ -2165,7 +2226,7 @@ static int get_next_router_vcg(router_state * s, tw_bf * bf, terminal_dally_mess
             }
         }
         next_rr_vcg = (next_rr_vcg + 1) % num_qos_levels;
-        assert(next_rr_vcg < 2);
+        assert(next_rr_vcg < num_qos_levels);
     }
     return -1;
 }
@@ -2265,7 +2326,7 @@ void terminal_dally_init( terminal_state * s, tw_lp * lp )
     for(i = 0; i < num_qos_levels; i++)
     {
         s->qos_data[i] = 0;
-        s->qos_status[i] = Q_ACTIVE;
+        s->qos_status[i] = Q_ACTIVE_SATED;
         s->vc_occupancy[i]=0;
     }
 
@@ -2411,7 +2472,7 @@ void router_dally_init(router_state * r, tw_lp * lp)
         r->qos_data[i] = (int*)calloc(num_qos_levels, sizeof(int));
         for(int j = 0; j < num_qos_levels; j++)
         {
-            r->qos_status[i][j] = Q_ACTIVE;
+            r->qos_status[i][j] = Q_ACTIVE_UNSATED;
             r->qos_data[i][j] = 0;
         }
         for(int j = 0; j < p->num_vcs; j++) 
@@ -2530,7 +2591,7 @@ static void packet_generate_rc(terminal_state * s, tw_bf * bf, terminal_dally_me
     if(num_qos_levels > 1)
     {
         vcg = get_vcg_from_category(msg); 
-        assert(vcg == Q_HIGH || vcg == Q_MEDIUM);
+        //assert(vcg == Q_HIGH || vcg == Q_MEDIUM);
     }
     assert(vcg < num_qos_levels);
 
@@ -2588,7 +2649,7 @@ static void packet_generate(terminal_state * s, tw_bf * bf, terminal_dally_messa
             tw_event_send(e);
         }
         vcg = get_vcg_from_category(msg);
-        assert(vcg == Q_HIGH || vcg == Q_MEDIUM);
+        //assert(vcg == Q_HIGH || vcg == Q_MEDIUM);
     }
     assert(vcg < num_qos_levels);
 
@@ -2720,9 +2781,9 @@ static void packet_send_rc(terminal_state * s, tw_bf * bf, terminal_dally_messag
     int num_qos_levels = s->params->num_qos_levels;
 
     if(msg->qos_reset1)
-        s->qos_status[0] = Q_ACTIVE;
+        s->qos_status[0] = Q_ACTIVE_UNSATED;
     if(msg->qos_reset2)
-        s->qos_status[1] = Q_ACTIVE;
+        s->qos_status[1] = Q_ACTIVE_UNSATED;
     
     if(msg->last_saved_qos)
         s->last_qos_lvl = msg->last_saved_qos;
@@ -3924,9 +3985,9 @@ static void router_packet_send_rc(router_state * s, tw_bf * bf, terminal_dally_m
     int output_port = msg->saved_vc;
       
     if(msg->qos_reset1)
-        s->qos_status[output_port][0] = Q_ACTIVE;
+        s->qos_status[output_port][0] = Q_ACTIVE_UNSATED;
     if(msg->qos_reset2)
-        s->qos_status[output_port][1] = Q_ACTIVE;
+        s->qos_status[output_port][1] = Q_ACTIVE_UNSATED;
     
     if(msg->last_saved_qos)
        s->last_qos_lvl[output_port] = msg->last_saved_qos; 
