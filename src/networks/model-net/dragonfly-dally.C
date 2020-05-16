@@ -2032,7 +2032,7 @@ void issue_rtr_bw_monitor_event(router_state *s, tw_bf *bf, terminal_dally_messa
     {
         for(int j = 0; j < num_qos_levels; j++)
         {
-            s->qos_status[i][j] = Q_ACTIVE_SATED;
+            s->qos_status[i][j] = Q_ACTIVE_UNSATED;
             s->qos_data[i][j] = 0;
         }
         s->busy_time_sample[i] = 0;
@@ -2326,7 +2326,7 @@ void terminal_dally_init( terminal_state * s, tw_lp * lp )
     for(i = 0; i < num_qos_levels; i++)
     {
         s->qos_data[i] = 0;
-        s->qos_status[i] = Q_ACTIVE_SATED;
+        s->qos_status[i] = Q_ACTIVE_UNSATED;
         s->vc_occupancy[i]=0;
     }
 
