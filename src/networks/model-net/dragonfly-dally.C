@@ -1475,7 +1475,6 @@ static void dragonfly_read_config(const char * anno, dragonfly_param *params)
             fprintf(stderr, "Setting bw_reset_window to %d\n", bw_reset_window);
 	}
     rc = configuration_get_value_int(&config, "PARAMS", "adaptive_threshold", anno, &p->adaptive_threshold);
-    rc = configuration_get_value_int(&config, "PARAMS", "adaptive_threshold", anno, &p->adaptive_threshold);
     if (rc) {
         if(!myRank)
             fprintf(stderr, "Adaptive Minimal Routing Threshold not specified: setting to default = 0. (Will consider minimal and nonminimal routes based on scoring metric alone)\n");
