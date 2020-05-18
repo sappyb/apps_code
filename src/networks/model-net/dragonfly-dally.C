@@ -1419,13 +1419,23 @@ static void dragonfly_read_config(const char * anno, dragonfly_param *params)
             fprintf(stderr, "Number of QOS levels not specified, setting to %d\n", p->num_qos_levels);
     }
 
+    p->qos_min_bws = (int*)calloc(p->num_qos_levels, sizeof(int));
     char qos_min_bws_str[MAX_NAME_LENGTH];
     rc = configuration_get_value(&config, "PARAMS", "qos_min_bws", anno, qos_min_bws_str, MAX_NAME_LENGTH);
-    p->qos_min_bws = (int*)calloc(p->num_qos_levels, sizeof(int));
+    if(rc) {
+	int i;
+        for(i = 0; i < p->num_qos_levels; i++)
+	    p->qos_min_bws[0] = 0;
+    }
 
+    p->qos_max_bws = (int*)calloc(p->num_qos_levels, sizeof(int));
     char qos_max_bws_str[MAX_NAME_LENGTH];
     rc = configuration_get_value(&config, "PARAMS", "qos_max_bws", anno, qos_max_bws_str, MAX_NAME_LENGTH);
-    p->qos_max_bws = (int*)calloc(p->num_qos_levels, sizeof(int));
+    if(rc) {
+	int i;
+        for(i = 0; i < p->num_qos_levels; i++)
+	    p->qos_max_bws[0] = 100;
+    }
 
     if(p->num_qos_levels > 1)
     {
@@ -1437,7 +1447,7 @@ static void dragonfly_read_config(const char * anno, dragonfly_param *params)
         {
             sscanf(token, "%d", &p->qos_min_bws[i]);
             total_bw += p->qos_min_bws[i];
-            if(p->qos_min_bws[i] <= 0)
+            if(p->qos_min_bws[i] < 0 || p->qos_min_bws[i] > 100)
             {
                 tw_error(TW_LOC, "\n Invalid min qos bandwidth provided");
             }
@@ -1451,7 +1461,7 @@ static void dragonfly_read_config(const char * anno, dragonfly_param *params)
         while(token != NULL)
         {
             sscanf(token, "%d", &p->qos_max_bws[i]);
-            if(p->qos_max_bws[i] <= 0)
+            if(p->qos_max_bws[i] < 0 || p->qos_max_bws[i] > 100)
             {
                 tw_error(TW_LOC, "\n Invalid max qos bandwidth provided");
             }
@@ -1459,7 +1469,7 @@ static void dragonfly_read_config(const char * anno, dragonfly_param *params)
             token = strtok(NULL,",");
         }
     }
-    else{
+    else{  // TODO: maybe this can be removed since initialization was done above
         p->qos_min_bws[0] = 0;
         p->qos_max_bws[0] = 100;
     }
@@ -2172,7 +2182,7 @@ static int get_next_router_vcg(router_state * s, tw_bf * bf, terminal_dally_mess
                     */
                     s->qos_status[output_port][k] = Q_INACTIVE;
                 }
-                if(bw_consumption[k] > s->params->qos_min_bws[k]) 
+                else if(bw_consumption[k] > s->params->qos_min_bws[k]) 
                 {
                     s->qos_status[output_port][k] = Q_ACTIVE_SATED;
                 }
