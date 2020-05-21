@@ -1434,7 +1434,7 @@ static void dragonfly_read_config(const char * anno, dragonfly_param *params)
     if(rc) {
 	int i;
         for(i = 0; i < p->num_qos_levels; i++)
-	    p->qos_max_bws[0] = 100;
+	    p->qos_max_bws[0] = 0;
     }
 
     if(p->num_qos_levels > 1)
