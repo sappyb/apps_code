@@ -259,10 +259,13 @@ struct dfly_qhash_entry
 
 typedef enum qos_priority
 {
-    Q_HIGH =0,
-    Q_MEDIUM,
-    Q_LOW,
-    Q_UNKNOWN,
+    Q_LEVEL_0 =0,   // Highest priority QoS class
+    Q_LEVEL_1,
+    Q_LEVEL_2,
+    Q_LEVEL_3,
+    Q_LEVEL_4,
+    Q_LEVEL_5,
+    Q_LEVEL_UNKNOWN,
 } qos_priority;
 
 typedef enum qos_status
@@ -1859,17 +1862,30 @@ void dragonfly_dally_report_stats()
 
 int get_vcg_from_category(terminal_dally_message * msg)
 {
+   int vcg;
+
    if(strcmp(msg->category, "high") == 0)
-       return Q_HIGH;
+       vcg = Q_LEVEL_0;
    else if(strcmp(msg->category, "medium") == 0)
-       return Q_MEDIUM;
+       vcg = Q_LEVEL_1;
+   else if(strcmp(msg->category, "low") == 0)
+       vcg = Q_LEVEL_2;
+   else if(strcmp(msg->category, "class3") == 0)
+       vcg = Q_LEVEL_3;
+   else if(strcmp(msg->category, "class4") == 0)
+       vcg = Q_LEVEL_4;
+   else if(strcmp(msg->category, "class5") == 0)
+       vcg = Q_LEVEL_5;
    else
        tw_error(TW_LOC, "\n priority needs to be specified with qos_levels>1 (catetory: %s)", msg->category);
+
+   assert(vcg >= Q_LEVEL_0 && vcg <= Q_LEVEL_5);
+   return vcg;
 }
 
 static int get_term_bandwidth_consumption(terminal_state * s, int qos_lvl)
 {
-    //assert(qos_lvl >= Q_HIGH && qos_lvl <= Q_LOW);
+    assert(qos_lvl >= Q_LEVEL_0 && qos_lvl <= Q_LEVEL_5);
 
     //tw_stime reset_window_s = ns_to_s(bw_reset_window); 
     //double bw_gib = bytes_to_gigabytes(s->qos_data[qos_lvl]);
@@ -1887,7 +1903,7 @@ static int get_term_bandwidth_consumption(terminal_state * s, int qos_lvl)
 /* TODO: Differentiate between local and global bandwidths. */
 static int get_rtr_bandwidth_consumption(router_state * s, int qos_lvl, int output_port)
 {
-    //assert(qos_lvl >= Q_HIGH && qos_lvl <= Q_LOW);
+    assert(qos_lvl >= Q_LEVEL_0 && qos_lvl <= Q_LEVEL_5);
     assert(output_port < s->params->intra_grp_radix + s->params->num_global_channels + s->params->num_cn);
 
     int bandwidth = s->params->cn_bandwidth;
@@ -2083,34 +2099,34 @@ static int get_next_vcg(terminal_state * s, tw_bf * bf, terminal_dally_message *
 
     /* KBEdit: This should be done AFTER the vcg has been selected. */
     /* First make sure the bandwidth consumption and status are up to date. */
-    for(int k = 0; k < num_qos_levels; k++)
-    {
-        if(s->qos_status[k] != Q_INACTIVE)
-        {
-            bw_consumption[k] = get_term_bandwidth_consumption(s, k);
-            if(bw_consumption[k] > s->params->qos_max_bws[k]) 
-            {
-                /* This should be fixed for accurate reverse computation
-                if(k == 0)
-                    msg->qos_reset1 = 1;
-                else if(k == 1)
-                    msg->qos_reset2 = 1;
-                */
-
-                /* Deactivate the class since it has exceeded the bw cap. */
-                s->qos_status[k] = Q_INACTIVE;
-            }
-            else if(bw_consumption[k] > s->params->qos_min_bws[k])
-            {
-                /* The class has meet its minimim bw guarantee requirement. */
-                s->qos_status[k] = Q_ACTIVE_SATED;
-            }
-        }
-    }
-    /* TODO: If none of the vcg is exceeding bandwidth limit then select high
-    * priority traffic first. */
     if(BW_MONITOR == 1)
     {
+        for(int k = 0; k < num_qos_levels; k++)
+        {
+            if(s->qos_status[k] != Q_INACTIVE)
+            {
+                bw_consumption[k] = get_term_bandwidth_consumption(s, k);
+                if(bw_consumption[k] > s->params->qos_max_bws[k]) 
+                {
+                    /* This should be fixed for accurate reverse computation
+                    if(k == 0)
+                        msg->qos_reset1 = 1;
+                    else if(k == 1)
+                        msg->qos_reset2 = 1;
+                    */
+
+                    /* Deactivate the class since it has exceeded the bw cap. */
+                    s->qos_status[k] = Q_INACTIVE;
+                }
+                else if(bw_consumption[k] > s->params->qos_min_bws[k])
+                {
+                    /* The class has meet its minimim bw guarantee requirement. */
+                    s->qos_status[k] = Q_ACTIVE_SATED;
+                }
+            }
+        }
+        /* TODO: If none of the vcg is exceeding bandwidth limit then select high
+        * priority traffic first. */
         /* Check classes that have not met their bw requirement. */
         for(int i = 0; i < num_qos_levels; i++)
         {
@@ -2606,7 +2622,6 @@ static void packet_generate_rc(terminal_state * s, tw_bf * bf, terminal_dally_me
     if(num_qos_levels > 1)
     {
         vcg = get_vcg_from_category(msg); 
-        //assert(vcg == Q_HIGH || vcg == Q_MEDIUM);
     }
     assert(vcg < num_qos_levels);
 
@@ -2664,7 +2679,6 @@ static void packet_generate(terminal_state * s, tw_bf * bf, terminal_dally_messa
             tw_event_send(e);
         }
         vcg = get_vcg_from_category(msg);
-        //assert(vcg == Q_HIGH || vcg == Q_MEDIUM);
     }
     assert(vcg < num_qos_levels);
 
@@ -5851,3 +5865,13 @@ struct model_net_method dragonfly_dally_router_method =
 // #endif
 
 }
+
+
+/*
+ * Local variables:
+ *  c-indent-level: 4
+ *  c-basic-offset: 4
+ * End:
+ *
+ * vim: ft=c ts=8 sts=4 sw=4 expandtab
+ */
