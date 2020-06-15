@@ -247,9 +247,9 @@ static void svr_init(
 
     /* If we're doing a synthetic qos run, print stats for reciever every window */
     //if (traffic == TARGETED && ns->svr_id == num_nodes_per_router){
-    if (ns->svr_id == 4)  //num_nodes_per_router)
+    if (ns->svr_id == num_nodes_per_router)  //num_nodes_per_router)
     {
-        printf("### QoS recvd stats for node: %d\n", ns->svr_id);
+        printf("### Q0S recvd stats for node: %d\n", ns->svr_id);
         tw_event *e;
         svr_msg *m;
         e = tw_event_new(lp->gid, bw_reset_window, lp);
@@ -297,7 +297,7 @@ static void handle_qos_snap_event(
     }
 
     // Issue event to print the stats from this window
-    if(ns->svr_id == 4) // KB to generalize
+    if(ns->svr_id == num_nodes_per_router) // KB to generalize
     {
         tw_event *e2;
         svr_msg *mg2;
@@ -336,14 +336,14 @@ static void handle_qos_snap_stats_event(
             tw_lp * lp)
 {
     
-    printf("### QOS_SNAPSHOT[time_Q1_Q2] %.0lf", tw_now(lp));
+    printf("### QOS_SNAPSHOT[time_Q1_Q2] %-6.0lf ", tw_now(lp));
     int i;
     float throughput, avg_latency;
     for( i=0; i < num_qos_levels; i++)
     {
         throughput = PAYLOAD_SZ*(float)window_global_msgs_recvd[i]/bw_reset_window;
         avg_latency = window_global_latencies[i]/window_global_msgs_recvd[i];
-        printf(" %lld [%f | %lf]", window_global_msgs_recvd[i], throughput, avg_latency);
+        printf(" %-4lld[ %8.2f   - %8.2lf  ]           ", window_global_msgs_recvd[i], throughput, avg_latency);
         window_global_msgs_recvd[i] = 0;
         window_global_latencies[i] = 0.0;
     }
@@ -490,7 +490,7 @@ static void handle_kickoff_event(
     ns->msg_sent_count[qos_group]++;
     m_remote->qos_group = qos_group;
 
-    if (qos_group == 0)
+    if (qos_group == 0)  //to generalize
         m->event_rc = model_net_event(net_id, "high", global_dest, PAYLOAD_SZ, 0.0, sizeof(svr_msg), (const void*)m_remote, sizeof(svr_msg), (const void*)m_local, lp);
     else
         m->event_rc = model_net_event(net_id, "medium", global_dest, PAYLOAD_SZ, 0.0, sizeof(svr_msg), (const void*)m_remote, sizeof(svr_msg), (const void*)m_local, lp);
@@ -550,7 +550,7 @@ static void handle_remote_event(
     /* Notify sender that the transfer is complete */
     tw_event *e;
     svr_msg *mg;
-    e = tw_event_new(m->src, 1, lp);
+    e = tw_event_new(m->src, 1.05, lp);
     mg = tw_event_data(e);
     mg->qos_group = m->qos_group;
     mg->svr_event_type = TRANSFER_END;
