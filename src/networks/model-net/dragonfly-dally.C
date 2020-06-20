@@ -3526,21 +3526,29 @@ void dragonfly_dally_router_final(router_state * s, tw_lp * lp)
     int written = 0;
     int src_rel_id = s->router_id % p->num_routers;
     int local_grp_id = s->router_id / p->num_routers;
-    for(int d = 0; d <= p->intra_grp_radix; d++) 
+    
+    vector< Connection > my_local_links = s->connMan->get_connections_by_type(CONN_LOCAL);
+    vector< Connection >::iterator itl = my_local_links.begin();
+    for(; itl != my_local_links.end(); itl++)
+    //for(int d = 0; d <= p->intra_grp_radix; d++) 
     {
-        if(d != src_rel_id)
-        {
-            int dest_ab_id = local_grp_id * p->num_routers + d;
+        int dest_rtr_id = itl->dest_gid;
+        int port_no = itl->port;
+        assert(port_no >= 0 && port_no < p->radix);
+        //if(d != src_rel_id)
+        //{
+        //    int dest_ab_id = local_grp_id * p->num_routers + d;
             written += sprintf(s->output_buf + written, "\n%d %s %d %s %s %llu %lf %lu", 
                 s->router_id,
                 "R",
-                dest_ab_id,
+                //dest_ab_id,
+                dest_rtr_id,
                 "R",
                 "L",
-                LLU(s->link_traffic[d]),
-                s->busy_time[d],
-                s->stalled_chunks[d]);
-        }
+                LLU(s->link_traffic[port_no]),
+                s->busy_time[port_no],
+                s->stalled_chunks[port_no]);
+        //}
     }
 
     vector< Connection > my_global_links = s->connMan->get_connections_by_type(CONN_GLOBAL);
