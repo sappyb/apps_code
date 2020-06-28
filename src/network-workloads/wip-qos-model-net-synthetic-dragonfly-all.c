@@ -10,6 +10,7 @@
 #include "codes/configuration.h"
 #include "codes/lp-type-lookup.h"
 #include "kbarrays.h"
+#include <float.h>
 
 
 static int net_id = 0;
@@ -19,6 +20,14 @@ static int PAYLOAD_SZ = 2048;
 static int num_qos_levels = 1;
 static int bw_reset_window = 1000;
 static int max_qos_monitor = 50000;
+static double max_peak_throughtput = 0.0;
+static FILE* latency_file = NULL;
+
+static int COLL_REPS = 1;
+static int COLL_COUNT = 8;
+static int coll_nodes[8] = {8,16,24,32,40,48,56,64};
+//static int COLL_COUNT = 16;
+//static int coll_nodes[16] = {53,57,6,37,4,38,39,65,4,13,42,25,49,41,15,4};
 
 static int num_servers_per_rep = 0;
 static int num_routers_per_grp = 0;
@@ -59,7 +68,9 @@ static long long *sum_global_messages_received;
 static tw_stime *mean_global_server_latency;
 
 static long long *window_global_msgs_recvd;
-static double *window_global_latencies;
+static double *window_global_sum_latency;
+static double *window_global_min_latency;
+static double *window_global_max_latency;
 
 /* type of events */
 enum svr_event
@@ -80,7 +91,8 @@ enum TRAFFIC
 	NEAREST_GROUP = 3, /* sends message to the node connected to the neighboring router */
 	NEAREST_NEIGHBOR = 4, /* sends message to the next node (potentially connected to the same router) */
     RANDOM_OTHER_GROUP = 5,
-    TARGETED = 9        /* QoS test mini-workload */
+    TARGETED = 9,        /* QoS test mini-workload */
+    COLLECTIVE = 10       /* Have an all to all between select nodes */
 };
 
 struct svr_state
@@ -99,6 +111,7 @@ struct svr_state
     int *transfers_completed_count;
     int *prev_msg_recvd_count;
     Array *my_times;
+    int last_dest;
 };
 
 struct svr_msg
@@ -206,6 +219,19 @@ static void svr_add_lp_type()
   lp_type_register("nw-lp", svr_get_lp_type());
 }
 
+static int is_collective_node(int nodeid)
+{
+    for(int i = 0; i < COLL_COUNT; i++)
+    {
+        if( nodeid == coll_nodes[i])
+        {
+            return 1;
+        }
+    }
+    return 0;
+}
+
+
 static void issue_event(
     svr_state * ns,
     tw_lp * lp)
@@ -215,12 +241,33 @@ static void issue_event(
     svr_msg *m;
     tw_stime kickoff_time;
 
+    if(is_collective_node(ns->svr_id))
+    {
+        if(tw_now(lp) < 5)
+        {
+            for(int j = 1; j <= COLL_REPS; j++)
+            {
+                kickoff_time = 3000 + j*bw_reset_window + codes_local_latency(lp);
+                for(int i = 0; i < COLL_COUNT; i++)
+                {
+                    kickoff_time += 10;
+                    tw_event *e2 = tw_event_new(lp->gid, kickoff_time, lp);
+                    svr_msg *m2 = tw_event_data(e2);
+                    m2->svr_event_type = KICKOFF;
+                    tw_event_send(e2);
+                }
+            }
+        }
+        return;
+
+    }
     /* each server sends a dummy event to itself that will kick off the real
      * simulation
      */
 
     /* skew each kickoff event slightly to help avoid event ties later on */
-    kickoff_time = 1.1 * g_tw_lookahead + tw_rand_exponential(lp->rng, arrival_time);
+    //kickoff_time = 1.1 * g_tw_lookahead + tw_rand_exponential(lp->rng, arrival_time);
+    kickoff_time = arrival_time + codes_local_latency(lp);
 
     e = tw_event_new(lp->gid, kickoff_time, lp);
     m = tw_event_data(e);
@@ -245,29 +292,56 @@ static void svr_init(
     ns->prev_msg_recvd_count = (int*)calloc(num_qos_levels, sizeof(int));
     ns->my_times = (Array*)malloc(num_qos_levels * sizeof(Array));
 
+    /* For collective nodes, set the last destination as myself */
+    ns->last_dest = 0;
+    for (i = 0; i < COLL_COUNT; i++)
+    {
+        if (coll_nodes[i] == ns->svr_id)
+        {
+            ns->last_dest = (i+1) % COLL_COUNT;
+            break;
+        }
+    }
+
     /* If we're doing a synthetic qos run, print stats for reciever every window */
     //if (traffic == TARGETED && ns->svr_id == num_nodes_per_router){
-    if (ns->svr_id == num_nodes_per_router)  //num_nodes_per_router)
-    {
-        printf("### Q0S recvd stats for node: %d\n", ns->svr_id);
+    //if (ns->svr_id == num_nodes_per_router)  //num_nodes_per_router)
+    //{
+        //printf("### QOS recvd stats for node: %d\n", ns->svr_id);
         tw_event *e;
         svr_msg *m;
         e = tw_event_new(lp->gid, bw_reset_window, lp);
         m = tw_event_data(e);
         m->svr_event_type = QOS_SNAP;
         tw_event_send(e);
-    }
+    //}
     for(i = 0; i < num_qos_levels; i++)
         initArray(&ns->my_times[i], num_msgs*1.05);
 
     /* If we're doing a synthetic qos run, only the first router of nodes should send messages */
-    if (traffic == TARGETED && ns->svr_id >= num_nodes_per_router)
+    if (traffic == TARGETED && ns->svr_id >= 1) //num_nodes_per_router)
+        return;
+    if (traffic == NEAREST_GROUP && ns->svr_id >= num_nodes_per_grp)
         return;
 
+
+    if (traffic == COLLECTIVE && is_collective_node(ns->svr_id))
+    {
+        printf("\n###QOS I'm a collective node! [%d]", ns->svr_id);
+        //return;
+    }
+
+    if(ns->svr_id == 0)
+    {
+        //printf("### QOS_SNAPSHOT Time   Q1_msgs                        [throughput -  latency  ]        Q2_msgs [ throughput -  latency  ]");
+        printf("### QOS                  (count)      (B/ns)       (ns)        (ns)        (ns)              (count)      (B/ns)       (ns)        (ns)        (ns)\n");
+        printf("### QOS_SNAPSHOT Time    Q1_msgs [throughput -  avg_lat  |  min_lat  |  max_lat  ]           Q2_msgs [throughput -  avg_lat  |  min_lat  |  max_lat  ]\n");
+    }
     //printf("Event issued on: %d\n", ns->svr_id);    // KBEDIT
     issue_event(ns, lp);
     return;
 }
+
 static void handle_qos_snap_rev_event(
             svr_state * ns,
             tw_bf * b,
@@ -285,19 +359,36 @@ static void handle_qos_snap_event(
     int i, j;
     for( i=0; i < num_qos_levels; i++)
     {
+        max_global_server_latency[i] = 0;
         int window_count = ns->msg_recvd_count[i] - ns->prev_msg_recvd_count[i];
         window_global_msgs_recvd[i] += window_count;
 
-        for (j = ns->prev_msg_recvd_count[i] -1; j < ns->msg_recvd_count[i]; j++)
+        for (j = ns->prev_msg_recvd_count[i]; j < ns->msg_recvd_count[i]; j++)
         {
-            window_global_latencies[i] += ns->my_times[i].record[j];
+            window_global_sum_latency[i] += ns->my_times[i].record[j];
+
+            if (max_global_server_latency[i] < ns->my_times[i].record[j])
+                max_global_server_latency[i] = ns->my_times[i].record[j];
+            if (window_global_max_latency[i] < ns->my_times[i].record[j])
+                window_global_max_latency[i] = ns->my_times[i].record[j];
+            if (window_global_min_latency[i] > ns->my_times[i].record[j])
+                window_global_min_latency[i] = ns->my_times[i].record[j];
+            //printf("Lat[%f], ", ns->my_times[i].record[j]);
         }
-        
+
+        if(window_count > 0)
+        {
+            fprintf(latency_file, "\n%.0lf %d %d ", tw_now(lp), ns->svr_id, i);
+            printArray(latency_file, &ns->my_times[i], ns->prev_msg_recvd_count[i], ns->msg_recvd_count[i]);
+        }
         ns->prev_msg_recvd_count[i] = ns->msg_recvd_count[i];
     }
 
+    //printf("\n[%2d] I've injected: %d", ns->svr_id, ns->local_recvd_count);
+
     // Issue event to print the stats from this window
-    if(ns->svr_id == num_nodes_per_router) // KB to generalize
+    //if(ns->svr_id == num_nodes_per_router) // KB to generalize
+    if(ns->svr_id == 0) // KB to generalize
     {
         tw_event *e2;
         svr_msg *mg2;
@@ -336,16 +427,34 @@ static void handle_qos_snap_stats_event(
             tw_lp * lp)
 {
     
-    printf("### QOS_SNAPSHOT[time_Q1_Q2] %-6.0lf ", tw_now(lp));
+    printf("### QOS_SNAPSHOT %-6.0lf  ", tw_now(lp));
     int i;
     float throughput, avg_latency;
+    int payload_sz;
+    if(is_collective_node(ns->svr_id))
+    {
+        payload_sz = PAYLOAD_SZ;
+    }else{
+        payload_sz = PAYLOAD_SZ;
+    }
+
     for( i=0; i < num_qos_levels; i++)
     {
-        throughput = PAYLOAD_SZ*(float)window_global_msgs_recvd[i]/bw_reset_window;
-        avg_latency = window_global_latencies[i]/window_global_msgs_recvd[i];
-        printf(" %-4lld[ %8.2f   - %8.2lf  ]           ", window_global_msgs_recvd[i], throughput, avg_latency);
+        throughput = PAYLOAD_SZ*window_global_msgs_recvd[i]/bw_reset_window;
+        avg_latency = window_global_sum_latency[i]/window_global_msgs_recvd[i];
+        
+        if (window_global_msgs_recvd[i] == 0)
+        {
+            avg_latency = 0.0;
+            window_global_min_latency[i] = 0.0;
+        }
+        
+        printf("%-7lld [ %8.2f  - %8.2f  | %8.2f  | %8.2f  ]           ", window_global_msgs_recvd[i], 
+                throughput, avg_latency, window_global_min_latency[i], window_global_max_latency[i]);
         window_global_msgs_recvd[i] = 0;
-        window_global_latencies[i] = 0.0;
+        window_global_sum_latency[i] = 0.0;
+        window_global_min_latency[i] = DBL_MAX;
+        window_global_max_latency[i] = 0.0;
     }
     printf("\n");
 }
@@ -436,6 +545,11 @@ static void handle_kickoff_event(
     b->c1 = 1;
     local_dest = tw_rand_integer(lp->rng, 1, num_nodes - 2);
     local_dest = (ns->svr_id + local_dest) % num_nodes;
+        while(is_collective_node(local_dest))
+        {
+            local_dest = tw_rand_integer(lp->rng, 1, num_nodes - 2);
+            local_dest = (ns->svr_id + local_dest) % num_nodes;
+        }
    }
    else if(traffic == NEAREST_GROUP)
    {
@@ -482,19 +596,44 @@ static void handle_kickoff_event(
    }
    else if(traffic == TARGETED){
         local_dest = num_nodes_per_router; // Sends traffic to the first node in the second router
+        //local_dest = num_nodes_per_grp; // Sends traffic to the first node in the second router
+        //local_dest = tw_rand_integer(lp->rng, num_nodes_per_router, num_nodes_per_router*2 - 1); // send traffic to a random node on the second router
+    }
+    else if(traffic == COLLECTIVE){
+        if(!is_collective_node(ns->svr_id)){
+            local_dest = tw_rand_integer(lp->rng, 1, num_nodes - 2);
+            local_dest = (ns->svr_id + local_dest) % num_nodes;
+            while(is_collective_node(local_dest))
+            {
+                local_dest = tw_rand_integer(lp->rng, 1, num_nodes - 2);
+                local_dest = (ns->svr_id + local_dest) % num_nodes;
+            }
+        }else{
+            int next_node= (ns->last_dest +1) % COLL_COUNT;
+            local_dest = coll_nodes[next_node];
+            if (local_dest == ns->svr_id) // Don't send to self
+            {
+                ns->last_dest = (ns->last_dest +1) % COLL_COUNT;
+                return;
+            }
+            ns->last_dest = next_node;
+        }
     }
     assert(local_dest < num_nodes);
 //   codes_mapping_get_lp_id(group_name, lp_type_name, anno, 1, local_dest / num_servers_per_rep, local_dest % num_servers_per_rep, &global_dest);
     global_dest = codes_mapping_get_lpid_from_relative(local_dest, group_name, lp_type_name, NULL, 0);
-    int qos_group = ns->svr_id % num_qos_levels;
-    ns->msg_sent_count[qos_group]++;
-    m_remote->qos_group = qos_group;
-
-    if (qos_group == 0)  //to generalize
-        m->event_rc = model_net_event(net_id, "high", global_dest, PAYLOAD_SZ, 0.0, sizeof(svr_msg), (const void*)m_remote, sizeof(svr_msg), (const void*)m_local, lp);
-    else
+    if (is_collective_node(ns->svr_id))  // to be generalized
+    {
+        ns->msg_sent_count[0]++;
+        m_remote->qos_group = 0;
+        m->event_rc = model_net_event(net_id, "high", global_dest, PAYLOAD_SZ , 0.0, sizeof(svr_msg), (const void*)m_remote, sizeof(svr_msg), (const void*)m_local, lp);
+        return;
+    }else
+    {
+        ns->msg_sent_count[1]++;
+        m_remote->qos_group = 1;
         m->event_rc = model_net_event(net_id, "medium", global_dest, PAYLOAD_SZ, 0.0, sizeof(svr_msg), (const void*)m_remote, sizeof(svr_msg), (const void*)m_local, lp);
-
+    }
 //   if (ns->msg_recvd_count[0] + ns->msg_recvd_count[1] < 100)  // KBEDIT
     issue_event(ns, lp);
     return;
@@ -686,7 +825,12 @@ static void init_global_stats()
     mean_global_server_latency = (tw_stime*) calloc(num_qos_levels, sizeof(tw_stime));
 
     window_global_msgs_recvd = (long long int*)calloc(num_qos_levels, sizeof(long long int));
-    window_global_latencies = (double*)calloc(num_qos_levels, sizeof(double));
+    window_global_sum_latency = (double*)calloc(num_qos_levels, sizeof(double));
+    window_global_min_latency = (double*)calloc(num_qos_levels, sizeof(double));
+    window_global_max_latency = (double*)calloc(num_qos_levels, sizeof(double));
+
+    for(int i=0; i < num_qos_levels; i++)
+        window_global_min_latency[i] = DBL_MAX;
 }
 
 // does MPI reduces across PEs to generate stats based on the global static variables in this file
@@ -758,6 +902,9 @@ int main(
     net_id = *net_ids;
     free(net_ids);
 
+    latency_file = fopen("r_latencies.txt", "w");
+    fprintf(latency_file, "snapshot_ts svr_id qos_id latency,[latency,]...");
+
     /* 5 days of simulation time */
     g_tw_ts_end = s_to_ns(5 * 24 * 60 * 60);
     //g_tw_ts_end = s_to_ns(0.00001);
@@ -775,12 +922,18 @@ int main(
     int num_routers_with_cns_per_group;
 
     if (net_id == DRAGONFLY_DALLY) {
+        int global_links_per_router;
+        double global_bandwidth;
         if (!rank)
             printf("Synthetic Generator: Detected Dragonfly Dally\n");
         configuration_get_value_int(&config, "PARAMS", "num_routers", NULL, &num_routers);
         configuration_get_value_int(&config, "PARAMS", "num_groups", NULL, &num_groups);
         configuration_get_value_int(&config, "PARAMS", "num_cns_per_router", NULL, &num_nodes_per_router);
         num_routers_with_cns_per_group = num_routers;
+
+        configuration_get_value_double(&config, "PARAMS", "global_bandwidth", NULL, &global_bandwidth);
+        configuration_get_value_int(&config, "PARAMS", "num_global_channels", NULL, &global_links_per_router);
+        max_peak_throughtput = global_links_per_router * global_bandwidth * num_routers * num_groups;
     }
     else if (net_id == DRAGONFLY_PLUS) {
         if (!rank)
@@ -828,9 +981,11 @@ int main(
     if(!rc){
         configuration_get_value_int(&config, "PARAMS", "bw_reset_window", NULL, &bw_reset_window);
         configuration_get_value_int(&config, "PARAMS", "max_qos_monitor", NULL, &max_qos_monitor);
-        printf("\n### %d QOS classes active.", num_qos_levels);
-        printf("\n### QoS BW reset window: %dns", bw_reset_window);
-        printf("\n### QoS monitoring ends: %dns\n", max_qos_monitor);
+        printf("\n### QOS Num active classes:  %d", num_qos_levels);
+        printf("\n### QOS BW reset window:     %dns", bw_reset_window);
+        printf("\n### QOS Monitoring ends:     %dns", max_qos_monitor);
+        printf("\n### QOS Global theoretical peak throughput: %f GiB/s", max_peak_throughtput);
+        printf("\n### QOS\n");
     }
 
     init_global_stats();
@@ -846,6 +1001,8 @@ int main(
     } // end if(g_st_ross_rank)
 #endif
     tw_end();
+
+    fclose(latency_file);
     return 0;
 }
 

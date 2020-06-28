@@ -43,3 +43,12 @@ static void freeArray(Array *a)
   a->used = 0;
   a->size = 0;
 }
+
+static void printArray(FILE* outfile, Array *a, int start, int stop)
+{
+	int i;
+	for(i = start; i < stop; i++)
+	{
+		fprintf(outfile, "%.0f,", a->record[i]);
+	}
+}
