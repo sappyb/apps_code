@@ -44,7 +44,7 @@
 #define BW_MONITOR 1
 #define DEBUG_LP 892
 #define DEBUG_QOS 1
-#define DEBUG_QOS_X 1
+#define DEBUG_QOS_X 0
 #define T_ID -1
 #define TRACK -1
 #define TRACK_PKT -1
@@ -2405,13 +2405,13 @@ static int token_get_next_router_vcg(router_state * s, tw_bf * bf, terminal_dall
         {
             #if DEBUG_QOS_X == 1
             printf("[%.0lf] qos_send_excess router:%d port:%d class:%d vc:%d (checked)\n", tw_now(lp), 
-                    s->router_id, output_port, i, k);
+                    s->router_id, output_port, next_rr_vcg, k);
             #endif
             if(s->pending_msgs[output_port][k] != NULL)
             {
                 #if DEBUG_QOS_X == 1
                 printf("[%.0lf] qos_send_excess router:%d port:%d class:%d vc:%d (sent)\n", tw_now(lp), 
-                        s->router_id, output_port, i, k);
+                        s->router_id, output_port, next_rr_vcg, k);
                 #endif
 
                 #if DEBUG_QOS == 1 
