@@ -44,6 +44,7 @@
 #define BW_MONITOR 1
 #define DEBUG_LP 892
 #define DEBUG_QOS 1
+#define DEBUG_QOS_X 1
 #define T_ID -1
 #define TRACK -1
 #define TRACK_PKT -1
@@ -54,6 +55,7 @@
 // maximum number of characters allowed to represent the routing algorithm as a string
 #define MAX_ROUTING_CHARS 32
 
+#define USE_TOKENS 1
 
 //Routing Defines
 //NONMIN_INCLUDE_SOURCE_DEST: Do we allow source and destination groups to be viable choces for indirect group (i.e. do we allow nonminimal routing to sometimes be minimal?)
@@ -71,6 +73,7 @@ static int min_gvc_src_g = 0;
 static int min_gvc_intm_g = 1;
 
 static tw_stime max_qos_monitor = 5000000000;
+static int qos_max_tokens = 0;
 static long num_local_packets_sr = 0;
 static long num_local_packets_sg = 0;
 static long num_remote_packets = 0;
@@ -411,6 +414,8 @@ struct terminal_state
 
     int * qos_status;
     int * qos_data;
+    float * qos_token_count;
+    tw_stime * qos_update_time;       // Last time the token was updated
 
     int last_qos_lvl;
     int is_monitoring_bw;
@@ -504,6 +509,8 @@ struct router_state
     int* last_qos_lvl;
     int** qos_status;
     int** qos_data;
+    float** qos_token_count;
+    tw_stime** qos_update_time;
     
 #if DEBUG_QOS == 1
     int** qos_excess;
@@ -1482,6 +1489,11 @@ static void dragonfly_read_config(const char * anno, dragonfly_param *params)
         p->qos_min_bws[0] = 0;
         p->qos_max_bws[0] = 100;
     }
+    rc = configuration_get_value_int(&config, "PARAMS", "qos_max_tokens", anno, &qos_max_tokens);
+    if(rc) {
+        if(!myRank)
+            fprintf(stderr, "Setting qos_max_tokens to %d\n", qos_max_tokens);
+	}
 
     rc = configuration_get_value_double(&config, "PARAMS", "max_qos_monitor", anno, &max_qos_monitor);
     if(rc) {
@@ -1889,6 +1901,38 @@ int get_vcg_from_category(terminal_dally_message * msg)
    return vcg;
 }
 
+static void update_accumulated_tokens(tw_stime now, terminal_state * s, int qos_lvl)
+{
+
+    if (s->qos_token_count[qos_lvl] == qos_max_tokens)
+    {
+        s->qos_update_time[qos_lvl] = now;
+        return;
+    }
+
+    tw_stime elapsed_time = now - s->qos_update_time[qos_lvl];
+
+    double max_bw = s->params->cn_bandwidth * 1024.0 * 1024.0 * 1024.0;
+    double max_bw_per_ns = max_bw / (1000.0 * 1000.0 * 1000.0);
+    double qos_bw_per_ns = max_bw_per_ns * s->params->qos_max_bws[qos_lvl] / 100;
+    
+    /* Calculations based on the cost of sending 1 flit = 1 token */
+    double elapsed_tokens = (qos_bw_per_ns / s->params->chunk_size) * elapsed_time;
+
+    if(s->qos_token_count[qos_lvl] + elapsed_tokens >= qos_max_tokens)
+    {
+        s->qos_token_count[qos_lvl] = qos_max_tokens; // Any truncation?
+    }else
+    {
+        s->qos_token_count[qos_lvl] += elapsed_tokens;
+    }
+
+    assert(s->qos_token_count[qos_lvl] >= 0.0 && s->qos_token_count[qos_lvl] <= qos_max_tokens);
+
+    s->qos_update_time[qos_lvl] = now;
+    return;
+}
+
 static int get_term_bandwidth_consumption(terminal_state * s, int qos_lvl)
 {
     assert(qos_lvl >= Q_LEVEL_0 && qos_lvl <= Q_LEVEL_5);
@@ -1904,6 +1948,43 @@ static int get_term_bandwidth_consumption(terminal_state * s, int qos_lvl)
     int percent_bw = (((double)s->qos_data[qos_lvl]) / max_bytes_per_win) * 100;
 //    printf("\n At terminal %lf max bytes %d percent %d ", max_bytes_per_win, s->qos_data[qos_lvl], percent_bw);
     return percent_bw;
+}
+
+static void update_rtr_accumulated_tokens(tw_stime now, router_state * s, int qos_lvl, int port)
+{
+
+    if (s->qos_token_count[port][qos_lvl] == qos_max_tokens)
+    {
+        s->qos_update_time[port][qos_lvl] = now;
+        return;
+    }
+    tw_stime elapsed_time = now - s->qos_update_time[port][qos_lvl];
+
+    double bandwidth = s->params->cn_bandwidth;
+    if (port < s->params->intra_grp_radix)
+        bandwidth = s->params->local_bandwidth;
+    else if (port < s->params->intra_grp_radix + s->params->num_global_channels)
+        bandwidth = s->params->global_bandwidth;
+
+    double max_bw = bandwidth * 1024.0 * 1024.0 * 1024.0;
+    double max_bw_per_ns = max_bw / (1000.0 * 1000.0 * 1000.0);
+    double qos_bw_per_ns = max_bw_per_ns * s->params->qos_max_bws[qos_lvl] / 100;
+    
+    /* Calculations based on the cost of sending 1 flit = 1 token */
+    double elapsed_tokens = (qos_bw_per_ns / s->params->chunk_size) * elapsed_time;
+
+    if(s->qos_token_count[port][qos_lvl] + elapsed_tokens >= qos_max_tokens)
+    {
+        s->qos_token_count[port][qos_lvl] = qos_max_tokens; // Any truncation?
+    }else
+    {
+        s->qos_token_count[port][qos_lvl] += elapsed_tokens;
+    }
+
+    assert(s->qos_token_count[port][qos_lvl] >= 0.0 && s->qos_token_count[port][qos_lvl] <= qos_max_tokens);
+
+    s->qos_update_time[port][qos_lvl] = now;
+    return;
 }
 
 /* TODO: Differentiate between local and global bandwidths. */
@@ -2093,6 +2174,58 @@ void issue_rtr_bw_monitor_event(router_state *s, tw_bf *bf, terminal_dally_messa
     tw_event_send(e);
 }
 
+static int token_get_next_vcg(terminal_state * s, tw_bf * bf, terminal_dally_message * msg, tw_lp * lp)
+{
+    int num_qos_levels = s->params->num_qos_levels;
+
+    /* If there's a single class, return it's VC */
+    if(num_qos_levels == 1)
+    {
+        if(s->terminal_msgs[0] == NULL || s->vc_occupancy[0] + s->params->chunk_size > s->params->cn_vc_size)
+            return -1;
+        else
+            return 0;
+    }
+
+//    int bw_consumption[num_qos_levels];
+
+    if(BW_MONITOR == 1)
+    {
+        for(int k = 0; k < num_qos_levels; k++)
+        {
+            update_accumulated_tokens(tw_now(lp), s, k);
+            if(s->qos_token_count[k] > 1.0f)
+            {
+                if(s->terminal_msgs[k] != NULL && s->vc_occupancy[k] + s->params->chunk_size <= s->params->cn_vc_size)
+                {
+                    s->qos_token_count[k] -= 1.0f;
+                    return k;
+                }
+            }
+           
+        }
+    }
+
+
+    int next_rr_vcg = (s->last_qos_lvl + 1) % num_qos_levels;
+    /* All vcgs are exceeding their bandwidth limits*/
+    for(int i = 0; i < num_qos_levels; i++)
+    {
+        if(s->terminal_msgs[i] != NULL && s->vc_occupancy[i] + s->params->chunk_size <= s->params->cn_vc_size)
+        {
+            bf->c2 = 1;
+            
+            if(msg->last_saved_qos < 0)
+                msg->last_saved_qos = s->last_qos_lvl;
+            
+            s->last_qos_lvl = next_rr_vcg;
+            return i;
+        }
+        next_rr_vcg = (next_rr_vcg + 1) % num_qos_levels;
+    }
+    return -1;
+}
+
 static int get_next_vcg(terminal_state * s, tw_bf * bf, terminal_dally_message * msg, tw_lp * lp)
 {
     int num_qos_levels = s->params->num_qos_levels;
@@ -2178,6 +2311,131 @@ static int get_next_vcg(terminal_state * s, tw_bf * bf, terminal_dally_message *
     return -1;
 }
 
+static int token_get_next_router_vcg(router_state * s, tw_bf * bf, terminal_dally_message * msg, tw_lp * lp)
+{
+    int num_qos_levels = s->params->num_qos_levels;
+
+    int vcs_per_qos = s->params->num_vcs / num_qos_levels;
+    int output_port = msg->vc_index;
+    int vcg = 0;
+    int base_limit = 0;
+        
+    int chunk_size = s->params->chunk_size;
+//    int bw_consumption[num_qos_levels];
+    /* First make sure the bandwidth consumptions are up to date. */
+    if(BW_MONITOR == 1)
+    {
+        // The following seem unused.
+        int vc_size = s->params->global_vc_size;
+        if(output_port < s->params->intra_grp_radix)
+            vc_size = s->params->local_vc_size;
+
+
+        for(int i = 0; i < num_qos_levels; i++)
+        {
+            update_rtr_accumulated_tokens(tw_now(lp), s, i, output_port);
+            #if DEBUG_QOS_X == 1
+            printf("[%.0lf] qos_token_accumulate router:%d port:%d class:%d tokens:%.2f \n", tw_now(lp), 
+                    s->router_id, output_port, i, s->qos_token_count[output_port][i]);
+            #endif
+        }
+
+        /* The loops before and after this debug section could be combined,
+         * but I wanted to get the status of all buffers and buckets before
+         * each send.
+         * Combining the loops would give slightly better performance since
+         * tokens for lower priority classs don't have to be updated if a
+         * higher priorty class is sending. */
+        #if DEBUG_QOS == 1 
+        for(int i = 0; i < num_qos_levels; i++)
+        {
+            if(s->qos_token_count[output_port][i] < 1.0f)
+            {
+                base_limit = i * vcs_per_qos;
+                for(int k = base_limit; k < base_limit + vcs_per_qos; k ++)
+                {
+                    if(s->pending_msgs[output_port][k] != NULL)
+                    {
+                        s->qos_blocked[output_port][i]++;
+                        break; 
+                        // This breaks why any VC in the group has data
+                        //  - consider removing it
+                    }
+                }
+                //if(s->pending_msgs[output_port][k] != NULL)
+                //    break;
+            }
+        }
+        #endif
+
+        for(int i = 0; i < num_qos_levels; i++)
+        {
+            if(s->qos_token_count[output_port][i] > 1.0f)
+            {
+                base_limit = i * vcs_per_qos;
+                for(int k = base_limit; k < base_limit + vcs_per_qos; k ++)
+                {
+                    if(s->pending_msgs[output_port][k] != NULL)
+                    {
+                        #if DEBUG_QOS_X == 1
+                        printf("[%.0lf] qos_send router:%d port:%d class:%d vc:%d (sent)\n", tw_now(lp), 
+                                s->router_id, output_port, i, k);
+                        #endif
+
+                        s->qos_token_count[output_port][i] -= 1.0f;
+                        return k;
+                    }
+                }
+
+            }
+           
+        }
+
+
+    }
+        
+    /* All vcgs are exceeding their bandwidth limits*/
+    msg->last_saved_qos = s->last_qos_lvl[output_port];
+    int next_rr_vcg = (s->last_qos_lvl[output_port] + 1) % num_qos_levels;
+
+    for(int i = 0; i < num_qos_levels; i++)
+    {
+        base_limit = next_rr_vcg * vcs_per_qos; 
+        for(int k = base_limit; k < base_limit + vcs_per_qos; k++)
+        {
+            #if DEBUG_QOS_X == 1
+            printf("[%.0lf] qos_send_excess router:%d port:%d class:%d vc:%d (checked)\n", tw_now(lp), 
+                    s->router_id, output_port, i, k);
+            #endif
+            if(s->pending_msgs[output_port][k] != NULL)
+            {
+                #if DEBUG_QOS_X == 1
+                printf("[%.0lf] qos_send_excess router:%d port:%d class:%d vc:%d (sent)\n", tw_now(lp), 
+                        s->router_id, output_port, i, k);
+                #endif
+
+                #if DEBUG_QOS == 1 
+                s->qos_excess[output_port][next_rr_vcg]++;
+                #endif
+
+                if(msg->last_saved_qos < 0)
+                    msg->last_saved_qos = s->last_qos_lvl[output_port];  // Is this correct for RC KBEDIT
+
+                s->last_qos_lvl[output_port] = next_rr_vcg;
+                return k;
+            }
+        }
+        next_rr_vcg = (next_rr_vcg + 1) % num_qos_levels;
+        assert(next_rr_vcg < num_qos_levels);
+    }
+    #if DEBUG_QOS_X == 1
+    printf("[%.0lf] qos_send_excess router:%d port:%d ----  (no data to send)\n", tw_now(lp), 
+            s->router_id, output_port);
+    #endif
+
+    return -1;
+}
+
 static int get_next_router_vcg(router_state * s, tw_bf * bf, terminal_dally_message * msg, tw_lp * lp)
 {
     int num_qos_levels = s->params->num_qos_levels;
@@ -2237,7 +2495,7 @@ static int get_next_router_vcg(router_state * s, tw_bf * bf, terminal_dally_mess
                         //  - consider removing it
                     }
                 }
-                if(s->pending_msgs[output_port][k] != NULL)
+                if(s->pending_msgs[output_port][k] != NULL) // KBEDIT this may need to be removed`
                     break;
             }
         }
@@ -2389,12 +2647,16 @@ void terminal_dally_init( terminal_state * s, tw_lp * lp )
     /* How much data has been transmitted on the virtual channel group within
         * the window */
     s->qos_data = (int*)calloc(num_qos_levels, sizeof(int));
+    s->qos_token_count = (float*)calloc(num_qos_levels, sizeof(float));
+    s->qos_update_time = (tw_stime*)calloc(num_qos_levels, sizeof(tw_stime));
     
     for(i = 0; i < num_qos_levels; i++)
     {
         s->qos_data[i] = 0;
         s->qos_status[i] = Q_ACTIVE_UNSATED;
         s->vc_occupancy[i]=0;
+        s->qos_token_count[i] = 0.0;
+        s->qos_update_time[i] = 0.0;
     }
 
     s->last_qos_lvl = 0;
@@ -2488,6 +2750,8 @@ void router_dally_init(router_state * r, tw_lp * lp)
     r->qos_data = (int**)calloc(p->radix, sizeof(int*));
     r->last_qos_lvl = (int*)calloc(p->radix, sizeof(int));
     r->qos_status = (int**)calloc(p->radix, sizeof(int*));
+    r->qos_token_count = (float**)calloc(p->radix, sizeof(float*));
+    r->qos_update_time = (tw_stime**)calloc(p->radix, sizeof(tw_stime*));
 
 #if DEBUG_QOS == 1
     r->qos_excess = (int**)calloc(p->radix, sizeof(int*));
@@ -2543,6 +2807,8 @@ void router_dally_init(router_state * r, tw_lp * lp)
             sizeof(terminal_dally_message_list*));
         r->qos_status[i] = (int*)calloc(num_qos_levels, sizeof(int));
         r->qos_data[i] = (int*)calloc(num_qos_levels, sizeof(int));
+        r->qos_token_count[i] = (float*)calloc(num_qos_levels, sizeof(float));
+        r->qos_update_time[i] = (tw_stime*)calloc(num_qos_levels, sizeof(tw_stime));
 #if DEBUG_QOS == 1
         r->qos_excess[i] = (int*)calloc(num_qos_levels, sizeof(int));
         r->qos_blocked[i] = (int*)calloc(num_qos_levels, sizeof(int));
@@ -2551,6 +2817,8 @@ void router_dally_init(router_state * r, tw_lp * lp)
         {
             r->qos_status[i][j] = Q_ACTIVE_UNSATED;
             r->qos_data[i][j] = 0;
+            r->qos_token_count[i][j] = 0;
+            r->qos_update_time[i][j] = 0.0;
 #if DEBUG_QOS == 1
             r->qos_excess[i][j] = 0;
             r->qos_blocked[i][j] = 0;
@@ -2714,6 +2982,7 @@ static void packet_generate(terminal_state * s, tw_bf * bf, terminal_dally_messa
             &mapping_type_id, NULL, &mapping_rep_id, &mapping_offset);
         codes_mapping_get_lp_id(lp_group_name, LP_CONFIG_NM_ROUT, NULL, 0,
             s->router_id / num_routers_per_mgrp, s->router_id % num_routers_per_mgrp, &router_id);
+        
         if(s->is_monitoring_bw == 0)
         {
             bf->c1 = 1;
@@ -2937,7 +3206,10 @@ static void packet_send(terminal_state * s, tw_bf * bf, terminal_dally_message *
     msg->num_rngs = 0;
     msg->num_cll = 0;
 
-    vcg = get_next_vcg(s, bf, msg, lp);
+    if(USE_TOKENS)
+        vcg = token_get_next_vcg(s, bf, msg, lp);
+    else
+        vcg = get_next_vcg(s, bf, msg, lp);
     
     /* For a terminal to router connection, there would be as many VCGs as number
     * of VCs*/
@@ -3048,7 +3320,15 @@ static void packet_send(terminal_state * s, tw_bf * bf, terminal_dally_message *
     int next_vcg = 0;
 
     if(num_qos_levels > 1) //I think this one is OK since the default is that terminals have only 1 VC anyway so leaving vcg as 
-        next_vcg = get_next_vcg(s, bf, msg, lp);
+    {
+        if(USE_TOKENS)
+        {   
+            next_vcg = token_get_next_vcg(s, bf, msg, lp);
+        } else
+        {
+            next_vcg = get_next_vcg(s, bf, msg, lp);
+        }
+    }
 
     cur_entry = NULL;
     if(next_vcg >= 0)
@@ -4171,7 +4451,15 @@ static void router_packet_send( router_state * s, tw_bf * bf, terminal_dally_mes
     msg->num_rngs = 0;
 
     int num_qos_levels = s->params->num_qos_levels;
-    int output_chan = get_next_router_vcg(s, bf, msg, lp); //includes default output_chan setting functionality if qos not enabled
+    int output_chan;
+   
+   if(USE_TOKENS)
+   {
+      output_chan = token_get_next_router_vcg(s, bf, msg, lp); //includes default output_chan setting functionality if qos not enabled
+   } else
+   {
+       output_chan = get_next_router_vcg(s, bf, msg, lp); //includes default output_chan setting functionality if qos not enabled
+   }
     
     msg->saved_vc = output_port;
     msg->saved_channel = output_chan;
@@ -4328,7 +4616,15 @@ static void router_packet_send( router_state * s, tw_bf * bf, terminal_dally_mes
     s->next_output_available_time[output_port] -= s->params->router_delay;
     injection_ts -= s->params->router_delay;
 
-    int next_output_chan = get_next_router_vcg(s, bf, msg, lp); 
+    int next_output_chan;
+   
+    if(USE_TOKENS)
+    {
+        next_output_chan = token_get_next_router_vcg(s, bf, msg, lp);
+    } else
+    {
+        next_output_chan = get_next_router_vcg(s, bf, msg, lp);
+    }
 
     if(next_output_chan < 0)
     {
