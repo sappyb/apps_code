@@ -28,6 +28,8 @@ struct terminal_dally_message
   short  type;
   /* category: comes from codes */
   char category[CATEGORY_NAME_MAX];
+  /* stores the QoS class */
+  int vc_group;
   /* store category hash in the event */
   uint32_t category_hash;
   /* final destination LP ID, this comes from codes can be a server or any other LP type*/
