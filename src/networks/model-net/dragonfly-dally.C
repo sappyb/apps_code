@@ -3435,7 +3435,9 @@ static void packet_arrive(terminal_state * s, tw_bf * bf, terminal_dally_message
     stat->recv_time += (tw_now(lp) - msg->travel_start_time);
 
 #if PRINT_MSG_TIMES == 1
-    fprintf(rdfdally_file, "\n%lf %d %d %d %lf", tw_now(lp), s->terminal_id, msg->dfdally_dest_terminal_id, msg->vc_group, (tw_now(lp) - msg->travel_start_time));
+    fprintf(rdfdally_file, "\n%lf %d %d %d %lf", tw_now(lp), s->terminal_id,
+            codes_mapping_get_lp_relative_id(msg->sender_mn_lp,0,0), 
+            msg->vc_group, (tw_now(lp) - msg->travel_start_time));
 #endif
 
 #if DEBUG == 1
