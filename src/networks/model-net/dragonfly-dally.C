@@ -2194,7 +2194,7 @@ static int token_get_next_vcg(terminal_state * s, tw_bf * bf, terminal_dally_mes
         for(int k = 0; k < num_qos_levels; k++)
         {
             update_accumulated_tokens(tw_now(lp), s, k);
-            if(s->qos_token_count[k] > 1.0f)
+            if(s->qos_token_count[k] >= 1.0f)
             {
                 if(s->terminal_msgs[k] != NULL && s->vc_occupancy[k] + s->params->chunk_size <= s->params->cn_vc_size)
                 {
@@ -2370,7 +2370,7 @@ static int token_get_next_router_vcg(router_state * s, tw_bf * bf, terminal_dall
 
         for(int i = 0; i < num_qos_levels; i++)
         {
-            if(s->qos_token_count[output_port][i] > 1.0f)
+            if(s->qos_token_count[output_port][i] >= 1.0f)
             {
                 base_limit = i * vcs_per_qos;
                 for(int k = base_limit; k < base_limit + vcs_per_qos; k ++)
