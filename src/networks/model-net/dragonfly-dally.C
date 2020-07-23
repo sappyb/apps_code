@@ -2687,7 +2687,6 @@ static tw_stime dragonfly_dally_packet_event(
     e_new = model_net_method_event_new(sender->gid, xfer_to_nic_time+offset,
             sender, DRAGONFLY_DALLY, (void**)&msg, (void**)&tmp_ptr);
     strcpy(msg->category, req->category);
-    msg->vc_group = (short)get_vcg_from_category(msg);
     msg->final_dest_gid = req->final_dest_lp;
     msg->total_size = req->msg_size;
     msg->sender_lp=req->src_lp;
@@ -2727,21 +2726,27 @@ static tw_stime dragonfly_dally_packet_event(
 
 static void packet_generate_rc(terminal_state * s, tw_bf * bf, terminal_dally_message * msg, tw_lp * lp)
 {
-    int num_qos_levels = s->params->num_qos_levels;
     if(bf->c1)
         s->is_monitoring_bw = 0;
-    
-    s->total_gen_size[msg->vc_group] -= msg->packet_size;
-    s->packet_gen[msg->vc_group]--;
-    packet_gen[msg->vc_group]--;
+
+    int vcg = 0;
+    if(s->params->num_qos_levels > 1)
+    {
+        vcg = get_vcg_from_category(msg); 
+    }
+    assert(vcg < s->params->num_qos_levels);
+
+    s->total_gen_size[vcg] -= msg->packet_size;
+    s->packet_gen[vcg]--;
+    packet_gen[vcg]--;
     s->packet_counter--;
 
     if(bf->c2)
-        num_local_packets_sr[msg->vc_group]--;
+        num_local_packets_sr[vcg]--;
     if(bf->c3)
-        num_local_packets_sg[msg->vc_group]--;
+        num_local_packets_sg[vcg]--;
     if(bf->c4)
-        num_remote_packets[msg->vc_group]--;
+        num_remote_packets[vcg]--;
 
     for(int i = 0; i < msg->num_rngs; i++)
         tw_rand_reverse_unif(lp->rng);
@@ -2754,13 +2759,6 @@ static void packet_generate_rc(terminal_state * s, tw_bf * bf, terminal_dally_me
         num_chunks++;
 
     int i;
-    int vcg = 0;
-    if(num_qos_levels > 1)
-    {
-        vcg = get_vcg_from_category(msg); 
-    }
-    assert(vcg < num_qos_levels);
-
     for(i = 0; i < num_chunks; i++) {
             delete_terminal_dally_message_list(return_tail(s->terminal_msgs, s->terminal_msgs_tail, vcg));
             s->terminal_length[vcg] -= s->params->chunk_size;
@@ -2789,12 +2787,9 @@ static void packet_generate(terminal_state * s, tw_bf * bf, terminal_dally_messa
     msg->num_rngs = 0;
     msg->num_cll = 0;
 
-    int num_qos_levels = s->params->num_qos_levels;
     int vcg = 0;
 
-    packet_gen[msg->vc_group]++;
-
-    if(num_qos_levels > 1)
+    if(s->params->num_qos_levels > 1)
     {
         tw_lpid router_id;
         codes_mapping_get_lp_info(lp->gid, lp_group_name, &mapping_grp_id, NULL,
@@ -2817,10 +2812,11 @@ static void packet_generate(terminal_state * s, tw_bf * bf, terminal_dally_messa
         }
         vcg = get_vcg_from_category(msg);
     }
-    assert(vcg < num_qos_levels);
+    assert(vcg < s->params->num_qos_levels);
 
-    s->packet_gen[msg->vc_group]++;
-    s->total_gen_size[msg->vc_group] += msg->packet_size;
+    packet_gen[vcg]++;
+    s->packet_gen[vcg]++;
+    s->total_gen_size[vcg] += msg->packet_size;
 
     tw_stime ts, injection_ts, nic_ts;
 
@@ -2843,18 +2839,18 @@ static void packet_generate(terminal_state * s, tw_bf * bf, terminal_dally_messa
         if(dest_router_id == s->router_id)
         {
             bf->c2 = 1;
-            num_local_packets_sr[msg->vc_group]++;
+            num_local_packets_sr[vcg]++;
         }
         else
         {
             bf->c3 = 1;
-            num_local_packets_sg[msg->vc_group]++;
+            num_local_packets_sg[vcg]++;
         }
     }
     else
     {
         bf->c4 = 1;
-        num_remote_packets[msg->vc_group]++;
+        num_remote_packets[vcg]++;
     }
     msg->num_rngs++;
     //nic_ts = g_tw_lookahead + (num_chunks * cn_delay) + tw_rand_unif(lp->rng);
@@ -3214,6 +3210,10 @@ static void send_remote_event(terminal_state * s, terminal_dally_message * msg, 
 
 static void packet_arrive_rc(terminal_state * s, tw_bf * bf, terminal_dally_message * msg, tw_lp * lp)
 {
+    int vcg = 0;
+    if(s->params->num_qos_levels > 1)
+        vcg = get_vcg_from_category(msg);
+    assert(vcg < s->params->num_qos_levels);
 
     for(int i = 0; i < msg->num_rngs; i++)
         tw_rand_reverse_unif(lp->rng);
@@ -3223,30 +3223,30 @@ static void packet_arrive_rc(terminal_state * s, tw_bf * bf, terminal_dally_mess
     
     if(bf->c31)
     {
-        s->packet_fin[msg->vc_group]--;
-        packet_fin[msg->vc_group]--;
+        s->packet_fin[vcg]--;
+        packet_fin[vcg]--;
     }
 
     if(msg->path_type == MINIMAL)
-        minimal_count[msg->vc_group]--;
+        minimal_count[vcg]--;
     if(msg->path_type == NON_MINIMAL)
-        nonmin_count[msg->vc_group]--;
+        nonmin_count[vcg]--;
 
-    N_finished_chunks[msg->vc_group]--;
-    s->finished_chunks[msg->vc_group]--;
+    N_finished_chunks[vcg]--;
+    s->finished_chunks[vcg]--;
     s->fin_chunks_sample--;
     s->ross_sample.fin_chunks_sample--;
     s->fin_chunks_ross_sample--;
 
-    total_hops[msg->vc_group] -= msg->my_N_hop;
-    s->total_hops[msg->vc_group] -= msg->my_N_hop;
+    total_hops[vcg] -= msg->my_N_hop;
+    s->total_hops[vcg] -= msg->my_N_hop;
     s->fin_hops_sample -= msg->my_N_hop;
     s->ross_sample.fin_hops_sample -= msg->my_N_hop;
     s->fin_hops_ross_sample -= msg->my_N_hop;
     s->fin_chunks_time = msg->saved_sample_time;
     s->ross_sample.fin_chunks_time = msg->saved_sample_time;
     s->fin_chunks_time_ross_sample = msg->saved_fin_chunks_ross;
-    s->total_time[msg->vc_group] = msg->saved_avg_time;
+    s->total_time[vcg] = msg->saved_avg_time;
     
     struct qhash_head * hash_link = NULL;
     struct dfly_qhash_entry * tmp = NULL; 
@@ -3266,13 +3266,13 @@ static void packet_arrive_rc(terminal_state * s, tw_bf * bf, terminal_dally_mess
     {
         stat->recv_count--;
         stat->recv_bytes -= msg->packet_size;
-        N_finished_packets[msg->vc_group]--;
-        s->finished_packets[msg->vc_group]--;
+        N_finished_packets[vcg]--;
+        s->finished_packets[vcg]--;
     }
     
     if(bf->c22)
 	{
-          s->max_latency[msg->vc_group] = msg->saved_available_time;
+          s->max_latency[vcg] = msg->saved_available_time;
 	} 
     if(bf->c7)
     {
@@ -3280,10 +3280,10 @@ static void packet_arrive_rc(terminal_state * s, tw_bf * bf, terminal_dally_mess
         if(bf->c4)
             model_net_event_rc2(lp, &msg->event_rc);
         
-        N_finished_msgs[msg->vc_group]--;
-        s->finished_msgs[msg->vc_group]--;
-        total_msg_sz[msg->vc_group] -= msg->total_size;
-        s->total_msg_size[msg->vc_group] -= msg->total_size;
+        N_finished_msgs[vcg]--;
+        s->finished_msgs[vcg]--;
+        total_msg_sz[vcg] -= msg->total_size;
+        s->total_msg_size[vcg] -= msg->total_size;
         s->data_size_sample -= msg->total_size;
         s->ross_sample.data_size_sample -= msg->total_size;
         s->data_size_ross_sample -= msg->total_size;
@@ -3316,6 +3316,11 @@ static void packet_arrive_rc(terminal_state * s, tw_bf * bf, terminal_dally_mess
 /* packet arrives at the destination terminal */
 static void packet_arrive(terminal_state * s, tw_bf * bf, terminal_dally_message * msg, tw_lp * lp) 
 {
+    int vcg = 0;
+    if(s->params->num_qos_levels > 1)
+        vcg = get_vcg_from_category(msg);
+    assert(vcg < s->params->num_qos_levels);
+
     if (msg->my_N_hop > s->params->max_hops_notify)
     {
         printf("Terminal received a packet with %d hops! (Notify on > than %d)\n",msg->my_N_hop, s->params->max_hops_notify);
@@ -3384,9 +3389,9 @@ static void packet_arrive(terminal_state * s, tw_bf * bf, terminal_dally_message
     bf->c7 = 0;
 
     /* Total overall finished chunks in simulation */
-    N_finished_chunks[msg->vc_group]++;
+    N_finished_chunks[vcg]++;
     /* Finished chunks on a LP basis */
-    s->finished_chunks[msg->vc_group]++;
+    s->finished_chunks[vcg]++;
     /* Finished chunks per sample */
     s->fin_chunks_sample++;
     s->ross_sample.fin_chunks_sample++;
@@ -3400,16 +3405,16 @@ static void packet_arrive(terminal_state * s, tw_bf * bf, terminal_dally_message
         num_chunks++;
 
     if(msg->path_type == MINIMAL)
-        minimal_count[msg->vc_group]++;
+        minimal_count[vcg]++;
 
     if(msg->path_type == NON_MINIMAL)
-        nonmin_count[msg->vc_group]++;
+        nonmin_count[vcg]++;
 
     if(msg->chunk_id == num_chunks - 1)
     {
         bf->c31 = 1;
-        s->packet_fin[msg->vc_group]++;
-        packet_fin[msg->vc_group]++;
+        s->packet_fin[vcg]++;
+        packet_fin[vcg]++;
     }
     if(msg->path_type != MINIMAL && msg->path_type != NON_MINIMAL)
         printf("\n Wrong message path type %d ", msg->path_type);
@@ -3422,10 +3427,10 @@ static void packet_arrive(terminal_state * s, tw_bf * bf, terminal_dally_message
     s->fin_chunks_time_ross_sample += (tw_now(lp) - msg->travel_start_time);
     
     /* save the total time per LP */
-    msg->saved_avg_time = s->total_time[msg->vc_group];
-    s->total_time[msg->vc_group] += (tw_now(lp) - msg->travel_start_time); 
-    total_hops[msg->vc_group] += msg->my_N_hop;
-    s->total_hops[msg->vc_group] += msg->my_N_hop;
+    msg->saved_avg_time = s->total_time[vcg];
+    s->total_time[vcg] += (tw_now(lp) - msg->travel_start_time); 
+    total_hops[vcg] += msg->my_N_hop;
+    s->total_hops[vcg] += msg->my_N_hop;
     s->fin_hops_sample += msg->my_N_hop;
     s->ross_sample.fin_hops_sample += msg->my_N_hop;
     s->fin_hops_ross_sample += msg->my_N_hop;
@@ -3435,9 +3440,11 @@ static void packet_arrive(terminal_state * s, tw_bf * bf, terminal_dally_message
     stat->recv_time += (tw_now(lp) - msg->travel_start_time);
 
 #if PRINT_MSG_TIMES == 1
+    /* We get the exact vcg set on the packet in case num_qos_levels == 0 */
+    int vc_group = get_vcg_from_category(msg);
     fprintf(rdfdally_file, "\n%lf %d %d %d %lf", tw_now(lp), s->terminal_id,
             codes_mapping_get_lp_relative_id(msg->sender_mn_lp,0,0), 
-            msg->vc_group, (tw_now(lp) - msg->travel_start_time));
+            vc_group, (tw_now(lp) - msg->travel_start_time));
 #endif
 
 #if DEBUG == 1
@@ -3487,8 +3494,8 @@ static void packet_arrive(terminal_state * s, tw_bf * bf, terminal_dally_message
         stat->recv_count++;
         stat->recv_bytes += msg->packet_size;
 
-        N_finished_packets[msg->vc_group]++;
-        s->finished_packets[msg->vc_group]++;
+        N_finished_packets[vcg]++;
+        s->finished_packets[vcg]++;
     }
 
     /* if its the last chunk of the packet then handle the remote event data */
@@ -3501,14 +3508,14 @@ static void packet_arrive(terminal_state * s, tw_bf * bf, terminal_dally_message
         memcpy(tmp->remote_event_data, m_data_src, msg->remote_event_size_bytes);
     }
     
-    if(s->min_latency[msg->vc_group] > tw_now(lp) - msg->travel_start_time) {
-		s->min_latency[msg->vc_group] = tw_now(lp) - msg->travel_start_time;	
+    if(s->min_latency[vcg] > tw_now(lp) - msg->travel_start_time) {
+		s->min_latency[vcg] = tw_now(lp) - msg->travel_start_time;	
 	}
 
-	if(s->max_latency[msg->vc_group] < tw_now( lp ) - msg->travel_start_time) {
+	if(s->max_latency[vcg] < tw_now( lp ) - msg->travel_start_time) {
         bf->c22 = 1;
-        msg->saved_available_time = s->max_latency[msg->vc_group];
-        s->max_latency[msg->vc_group] = tw_now(lp) - msg->travel_start_time;
+        msg->saved_available_time = s->max_latency[vcg];
+        s->max_latency[vcg] = tw_now(lp) - msg->travel_start_time;
 	}
     /* If all chunks of a message have arrived then send a remote event to the
      * callee*/
@@ -3521,10 +3528,10 @@ static void packet_arrive(terminal_state * s, tw_bf * bf, terminal_dally_message
         s->data_size_sample += msg->total_size;
         s->ross_sample.data_size_sample += msg->total_size;
         s->data_size_ross_sample += msg->total_size;
-        N_finished_msgs[msg->vc_group]++;
-        total_msg_sz[msg->vc_group] += msg->total_size;
-        s->total_msg_size[msg->vc_group] += msg->total_size;
-        s->finished_msgs[msg->vc_group]++;
+        N_finished_msgs[vcg]++;
+        total_msg_sz[vcg] += msg->total_size;
+        s->total_msg_size[vcg] += msg->total_size;
+        s->finished_msgs[vcg]++;
         
         //assert(tmp->remote_event_data && tmp->remote_event_size > 0);
         if(tmp->remote_event_data && tmp->remote_event_size > 0) {
