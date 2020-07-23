@@ -2407,6 +2407,10 @@ static int token_get_next_router_vcg(router_state * s, tw_bf * bf, terminal_dall
                 {
                     if(s->pending_msgs[output_port][k] != NULL)
                     {
+                        #if DEBUG_QOS_X == 1
+                        printf("[%.0lf] qos_blocked router:%d port:%d class:%d vc:%d ==\n", tw_now(lp), 
+                                s->router_id, output_port, i, k);
+                        #endif
                         s->qos_blocked[output_port][i]++;
                         break; 
                         // This breaks why any VC in the group has data
@@ -4723,8 +4727,7 @@ static void router_packet_send( router_state * s, tw_bf * bf, terminal_dally_mes
     s->next_output_available_time[output_port] -= s->params->router_delay;
     injection_ts -= s->params->router_delay;
 
-    int next_output_chan;
-   
+    /*
     if(USE_TOKENS)
     {
         next_output_chan = token_get_next_router_vcg(s, bf, msg, lp);
@@ -4732,7 +4735,22 @@ static void router_packet_send( router_state * s, tw_bf * bf, terminal_dally_mes
     {
         next_output_chan = get_next_router_vcg(s, bf, msg, lp);
     }
-
+*/
+    int next_output_chan = -1;
+    int base_limit = 0;
+    int vcs_per_qos = s->params->num_vcs / num_qos_levels;
+    for(int i = 0; i < num_qos_levels; i++)
+    {
+        base_limit = i * vcs_per_qos;
+        for(int k = base_limit; k < base_limit + vcs_per_qos; k ++)
+        {
+            if(s->pending_msgs[output_port][k] != NULL)
+            {
+                next_output_chan = k;
+                break; 
+            }
+        }
+    }
     if(next_output_chan < 0)
     {
         bf->c4 = 1;
