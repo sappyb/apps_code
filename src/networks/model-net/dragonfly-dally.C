@@ -516,6 +516,8 @@ struct router_state
 #if DEBUG_QOS == 1
     int** qos_excess;
     int** qos_blocked;
+    int** qos_unblocked;
+    int** qos_compliant;
 #endif
 
     const char * anno;
@@ -2187,9 +2189,9 @@ void issue_rtr_bw_monitor_event(router_state *s, tw_bf *bf, terminal_dally_messa
             #if DEBUG_QOS == 1 
             if(dragonfly_rtr_bw_log != NULL)
             {
-                if(s->qos_data[i][j] > 0 || s->qos_blocked[i][j] > 0)
+                if(s->qos_blocked[i][j] > 0 || s->qos_unblocked[i][j] > 0)
                 {
-                    fprintf(dragonfly_rtr_bw_log, "\n %d %f %d %d %d %d %d %f %d %d", s->router_id, tw_now(lp), i, j, bw_consumed, s->qos_status[i][j], s->qos_data[i][j], s->busy_time_sample[i], s->qos_blocked[i][j], s->qos_excess[i][j]);
+                    fprintf(dragonfly_rtr_bw_log, "\n %d %f %d %d %d %d %d %f %d %d %d %d", s->router_id, tw_now(lp), i, j, bw_consumed, s->qos_status[i][j], s->qos_data[i][j], s->busy_time_sample[i], s->qos_blocked[i][j], s->qos_excess[i][j], s->qos_unblocked[i][j], s->qos_compliant[i][j]);
                 }
             }
             #endif   
@@ -2206,6 +2208,8 @@ void issue_rtr_bw_monitor_event(router_state *s, tw_bf *bf, terminal_dally_messa
             #if DEBUG_QOS == 1
             s->qos_excess[i][j] = 0;
             s->qos_blocked[i][j] = 0;
+            s->qos_unblocked[i][j] = 0;
+            s->qos_compliant[i][j] = 0;
             #endif
         }
         s->busy_time_sample[i] = 0;
@@ -2413,12 +2417,24 @@ static int token_get_next_router_vcg(router_state * s, tw_bf * bf, terminal_dall
                         #endif
                         s->qos_blocked[output_port][i]++;
                         break; 
-                        // This breaks why any VC in the group has data
-                        //  - consider removing it
                     }
                 }
-                //if(s->pending_msgs[output_port][k] != NULL)
-                //    break;
+            }
+            else
+            {
+                base_limit = i * vcs_per_qos;
+                for(int k = base_limit; k < base_limit + vcs_per_qos; k ++)
+                {
+                    if(s->pending_msgs[output_port][k] != NULL)
+                    {
+                        #if DEBUG_QOS_X == 1
+                        printf("[%.0lf] qos_unblocked router:%d port:%d class:%d vc:%d ==\n", tw_now(lp), 
+                                s->router_id, output_port, i, k);
+                        #endif
+                        s->qos_unblocked[output_port][i]++;
+                        break; 
+                    }
+                }
             }
         }
         #endif
@@ -2438,6 +2454,11 @@ static int token_get_next_router_vcg(router_state * s, tw_bf * bf, terminal_dall
                         #endif
 
                         s->qos_token_count[output_port][i] -= 1.0f;
+                        
+                        #if DEBUG_QOS == 1
+                        s->qos_compliant[output_port][i]++;
+                        #endif
+                        
                         return k;
                     }
                 }
@@ -2812,7 +2833,7 @@ void router_dally_init(router_state * r, tw_lp * lp)
     {
         dragonfly_rtr_bw_log = fopen(rtr_bw_log, "w+");
 
-        fprintf(dragonfly_rtr_bw_log, "\n router-id time-stamp port-id qos-level bw-consumed qos-status qos-data busy-time qos-blocked qos-excess");
+        fprintf(dragonfly_rtr_bw_log, "\n router-id time-stamp port-id qos-level bw-consumed qos-status qos-data busy-time qos-blocked qos-excess qos-unblocked qos-compliant");
     }
    //printf("\n Local router id %d global id %d ", r->router_id, lp->gid);
 
@@ -2845,6 +2866,8 @@ void router_dally_init(router_state * r, tw_lp * lp)
 #if DEBUG_QOS == 1
     r->qos_excess = (int**)calloc(p->radix, sizeof(int*));
     r->qos_blocked = (int**)calloc(p->radix, sizeof(int*));
+    r->qos_unblocked = (int**)calloc(p->radix, sizeof(int*));
+    r->qos_compliant = (int**)calloc(p->radix, sizeof(int*));
 #endif
 
     r->pending_msgs = 
@@ -2901,6 +2924,8 @@ void router_dally_init(router_state * r, tw_lp * lp)
 #if DEBUG_QOS == 1
         r->qos_excess[i] = (int*)calloc(num_qos_levels, sizeof(int));
         r->qos_blocked[i] = (int*)calloc(num_qos_levels, sizeof(int));
+        r->qos_unblocked[i] = (int*)calloc(num_qos_levels, sizeof(int));
+        r->qos_compliant[i] = (int*)calloc(num_qos_levels, sizeof(int));
 #endif
         for(int j = 0; j < num_qos_levels; j++)
         {
@@ -2911,6 +2936,8 @@ void router_dally_init(router_state * r, tw_lp * lp)
 #if DEBUG_QOS == 1
             r->qos_excess[i][j] = 0;
             r->qos_blocked[i][j] = 0;
+            r->qos_unblocked[i][j] = 0;
+            r->qos_compliant[i][j] = 0;
 #endif
         }
         for(int j = 0; j < p->num_vcs; j++) 
