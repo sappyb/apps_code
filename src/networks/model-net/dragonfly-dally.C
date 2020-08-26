@@ -1889,7 +1889,7 @@ int get_vcg_from_category(terminal_dally_message * msg)
    return vcg;
 }
 
-static int get_term_bandwidth_consumption(terminal_state * s, int qos_lvl)
+static double get_term_bandwidth_consumption(terminal_state * s, int qos_lvl)
 {
     assert(qos_lvl >= Q_LEVEL_0 && qos_lvl <= Q_LEVEL_5);
 
@@ -1901,18 +1901,18 @@ static int get_term_bandwidth_consumption(terminal_state * s, int qos_lvl)
     double max_bw_per_ns = max_bw / (1000.0 * 1000.0 * 1000.0);
     double max_bytes_per_win = max_bw_per_ns * bw_reset_window;
 //    int percent_bw = (bw_consumed / s->params->cn_bandwidth) * 100;
-    int percent_bw = (((double)s->qos_data[qos_lvl]) / max_bytes_per_win) * 100;
+    double percent_bw = (((double)s->qos_data[qos_lvl]) / max_bytes_per_win) * 100;
 //    printf("\n At terminal %lf max bytes %d percent %d ", max_bytes_per_win, s->qos_data[qos_lvl], percent_bw);
     return percent_bw;
 }
 
 /* TODO: Differentiate between local and global bandwidths. */
-static int get_rtr_bandwidth_consumption(router_state * s, int qos_lvl, int output_port)
+static double get_rtr_bandwidth_consumption(router_state * s, int qos_lvl, int output_port)
 {
     assert(qos_lvl >= Q_LEVEL_0 && qos_lvl <= Q_LEVEL_5);
     assert(output_port < s->params->intra_grp_radix + s->params->num_global_channels + s->params->num_cn);
 
-    int bandwidth = s->params->cn_bandwidth;
+    double bandwidth = s->params->cn_bandwidth;
     if (output_port < s->params->intra_grp_radix)
         bandwidth = s->params->local_bandwidth;
     else if (output_port < s->params->intra_grp_radix + s->params->num_global_channels)
@@ -1927,7 +1927,7 @@ static int get_rtr_bandwidth_consumption(router_state * s, int qos_lvl, int outp
 //    tw_stime reset_window_s = ns_to_s(bw_reset_window);
 //    double bw_gib = bytes_to_gigabytes(s->qos_data[output_port][qos_lvl]);
 //    double bw_consumed = ((double)bw_gib / (double)reset_window_s);
-    int percent_bw = (((double)s->qos_data[output_port][qos_lvl]) / max_bytes_per_win) * 100;
+    double percent_bw = (((double)s->qos_data[output_port][qos_lvl]) / max_bytes_per_win) * 100;
 //    printf("\n percent bw consumed by qos_lvl %d is %d bytes transferred %d max_bw %lf ", qos_lvl, percent_bw, s->qos_data[output_port][qos_lvl], max_bw_per_ns);
     return percent_bw;
 }
@@ -2050,14 +2050,14 @@ void issue_rtr_bw_monitor_event(router_state *s, tw_bf *bf, terminal_dally_messa
     {
         for(int j = 0; j < num_qos_levels; j++)
         {
-            int bw_consumed = get_rtr_bandwidth_consumption(s, j, i);
+            double bw_consumed = get_rtr_bandwidth_consumption(s, j, i);
         
             #if DEBUG_QOS == 1 
             if(dragonfly_rtr_bw_log != NULL)
             {
                 if(s->qos_data[i][j] > 0)
                 {
-                    fprintf(dragonfly_rtr_bw_log, "\n %d %f %d %d %d %d %d %f %d %d", s->router_id, tw_now(lp), i, j, bw_consumed, s->qos_status[i][j], s->qos_data[i][j], s->busy_time_sample[i], s->qos_blocked[i][j], s->qos_excess[i][j]);
+                    fprintf(dragonfly_rtr_bw_log, "\n %d %f %d %d %f %d %d %f %d %d", s->router_id, tw_now(lp), i, j, bw_consumed, s->qos_status[i][j], s->qos_data[i][j], s->busy_time_sample[i], s->qos_blocked[i][j], s->qos_excess[i][j]);
                 }
             }
             #endif   
@@ -2105,7 +2105,7 @@ static int get_next_vcg(terminal_state * s, tw_bf * bf, terminal_dally_message *
             return 0;
     }
 
-    int bw_consumption[num_qos_levels];
+    double bw_consumption[num_qos_levels];
 
     /* KBEdit: This should be done AFTER the vcg has been selected. */
     /* First make sure the bandwidth consumption and status are up to date. */
@@ -2188,7 +2188,7 @@ static int get_next_router_vcg(router_state * s, tw_bf * bf, terminal_dally_mess
     int base_limit = 0;
         
     int chunk_size = s->params->chunk_size;
-    int bw_consumption[num_qos_levels];
+    double bw_consumption[num_qos_levels];
     /* First make sure the bandwidth consumptions are up to date. */
     if(BW_MONITOR == 1)
     {
