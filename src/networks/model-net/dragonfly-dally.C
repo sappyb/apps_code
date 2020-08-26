@@ -2706,6 +2706,19 @@ void terminal_dally_init( terminal_state * s, tw_lp * lp )
             dragonfly_term_bw_log = fopen(term_bw_log, "w");
             fprintf(dragonfly_term_bw_log, "\n term-id time-stamp port-id busy-time");
         }*/
+
+    if(num_qos_levels > 1 && USE_TOKENS)
+    {
+        tw_stime bw_ts = bw_reset_window;
+        terminal_dally_message * m;
+        tw_event * e = model_net_method_event_new(lp->gid, bw_ts, lp, 
+                DRAGONFLY_DALLY, (void**)&m, NULL);
+        m->type = T_BANDWIDTH; 
+        m->magic = terminal_magic_num;
+        s->is_monitoring_bw = 1;
+        tw_event_send(e);
+    }
+
     return;
 }
 
@@ -2865,6 +2878,18 @@ void router_dally_init(router_state * r, tw_lp * lp)
     }
 
     r->connMan->solidify_connections();
+
+    if(num_qos_levels > 1 && USE_TOKENS)
+    {
+        tw_stime bw_ts = bw_reset_window;
+        terminal_dally_message * m;
+        tw_event * e = model_net_method_event_new(lp->gid, bw_ts, lp, 
+            DRAGONFLY_DALLY_ROUTER, (void**)&m, NULL); 
+        m->type = R_BANDWIDTH; 
+        m->magic = router_magic_num;
+        tw_event_send(e);
+        r->is_monitoring_bw = 1;
+    }
 
     return;
 }	
@@ -4229,7 +4254,7 @@ static void router_packet_receive( router_state * s,
     int num_qos_levels = s->params->num_qos_levels;
     int vcs_per_qos = s->params->num_vcs / num_qos_levels;
 
-    if(num_qos_levels > 1)
+    if(num_qos_levels > 1 && !USE_TOKENS)
     {
         if(s->is_monitoring_bw == 0)
         {
