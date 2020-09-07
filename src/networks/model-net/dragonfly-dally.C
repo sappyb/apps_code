@@ -2296,18 +2296,14 @@ static int token_get_next_vcg(terminal_state * s, tw_bf * bf, terminal_dally_mes
 
             if(s->terminal_msgs[k] != NULL && s->vc_occupancy[k] + s->params->chunk_size <= s->params->cn_vc_size)
             {
-                /* Check if this is green claass: it is within its assured rate */
-                if(s->qos_min_token_count[k] >= 1.0f)
+                // The class is red if there are no token in the max (peak) rate bucket /
+                if(s->qos_max_token_count[k] < 1.0f)
                 {
-                    green = true;
-                    if(first_green < 0 )
-                    {
-                        first_green = k;
-                    }
+                    red = true;
                     break;
                 }
-                /* Check if this is a yellow class: it is not green and within its peak rate. */
-                else if(s->qos_max_token_count[k] >= 1.0f)
+                // The class is yellow if there are no token in the min (assured) rate bucket /
+                else if(s->qos_min_token_count[k] < 1.0f)
                 {
                     yellow = true;
                     if(first_yellow < 0)
@@ -2316,10 +2312,14 @@ static int token_get_next_vcg(terminal_state * s, tw_bf * bf, terminal_dally_mes
                     }
                     break;
                 }
-                /* If the class is neithe green nor yellow, it is red */
+                // The class is green because we have tokens in the  min (assured) rate bucket /
                 else
                 {
-                    red = true;
+                    green = true;
+                    if(first_green < 0 )
+                    {
+                        first_green = k;
+                    }
                     break;
                 }
             }
@@ -2486,18 +2486,14 @@ static int token_get_next_router_vcg(router_state * s, tw_bf * bf, terminal_dall
             {
                 if(s->pending_msgs[output_port][k] != NULL)
                 {
-                    /* Check if this is green claass: it is within its assured rate */
-                    if(s->qos_min_token_count[output_port][i] >= 1.0f)
+                    /* Check if this is a yellow class: it is not green and within its peak rate. */
+                    if(s->qos_max_token_count[output_port][i] < 1.0f)
                     {
-                        green = true;
-                        if(first_green < 0 )
-                        {
-                            first_green = k;
-                        }
+                        red = true;
                         break;
                     }
-                    /* Check if this is a yellow class: it is not green and within its peak rate. */
-                    else if(s->qos_max_token_count[output_port][i] >= 1.0f)
+                    /* Check if this is a green class: it is within its assured rate */
+                    if(s->qos_min_token_count[output_port][i] < 1.0f)
                     {
                         yellow = true;
                         if(first_yellow < 0)
@@ -2509,13 +2505,15 @@ static int token_get_next_router_vcg(router_state * s, tw_bf * bf, terminal_dall
                     /* If the class is neithe green nor yellow, it is red */
                     else
                     {
-                        red = true;
+                        green = true;
+                        if(first_green < 0 )
+                        {
+                            first_green = k;
+                        }
                         break;
                     }
                 }
             }
-
-
 
             #if DEBUG_QOS == 1
             if(green == true)
