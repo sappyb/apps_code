@@ -1490,6 +1490,8 @@ static void dragonfly_read_config(const char * anno, dragonfly_param *params)
                 tw_error(TW_LOC, "\n Invalid min qos bandwidth provided");
             }
             i++;
+            if(i == p->num_qos_levels)
+                break;
             token = strtok(NULL,",");
         }
         assert(total_bw <= 100);
@@ -1504,6 +1506,8 @@ static void dragonfly_read_config(const char * anno, dragonfly_param *params)
                 tw_error(TW_LOC, "\n Invalid max qos bandwidth provided");
             }
             i++;
+            if(i == p->num_qos_levels)
+                break;
             token = strtok(NULL,",");
         }
     }
