@@ -2957,7 +2957,7 @@ void terminal_dally_init( terminal_state * s, tw_lp * lp )
 
 #if PRINT_MSG_TIMES == 1
         rdfdally_file = fopen("/tmp/r-dfdally.out", "w");
-        fprintf(rdfdally_file, "time destination source qosclass latency");
+        fprintf(rdfdally_file, "time destination source qosclass num.hops latency router.queue.time");
 #endif
     }
  
@@ -4029,9 +4029,10 @@ static void packet_arrive(terminal_state * s, tw_bf * bf, terminal_dally_message
 #if PRINT_MSG_TIMES == 1
     /* We get the exact vcg set on the packet in case num_qos_levels == 0 */
     int vc_group = get_vcg_from_category(msg);
-    fprintf(rdfdally_file, "\n%lf %d %d %d %lf", tw_now(lp), s->terminal_id,
+    fprintf(rdfdally_file, "\n%lf %d %d %d %d %lf %lf", tw_now(lp), s->terminal_id,
             codes_mapping_get_lp_relative_id(msg->sender_mn_lp,0,0), 
-            vc_group, (tw_now(lp) - msg->travel_start_time));
+            vc_group, msg->my_N_hop, (tw_now(lp) - msg->travel_start_time),
+            msg->router_stall_total_time);
 #endif
 
 #if DEBUG == 1
@@ -4648,8 +4649,13 @@ static void router_packet_receive( router_state * s,
     terminal_dally_message_list * cur_chunk = (terminal_dally_message_list*)calloc(1, sizeof(terminal_dally_message_list));
     init_terminal_dally_message_list(cur_chunk, msg);
     
+    cur_chunk->msg.router_stall_start_time = tw_now(lp);
     if(cur_chunk->msg.last_hop == TERMINAL) // We are first router in the path
+    {
         cur_chunk->msg.path_type = MINIMAL; // Route always starts as minimal
+
+        cur_chunk->msg.router_stall_total_time = 0;
+    }
 
     Connection next_stop_conn = do_dfdally_routing(s, bf, &(cur_chunk->msg), lp, dest_router_id);
     msg->num_rngs += (cur_chunk->msg).num_rngs; //make sure we're counting the rngs called during do_dfdally_routing()
@@ -4957,6 +4963,11 @@ static void router_packet_send( router_state * s, tw_bf * bf, terminal_dally_mes
     msg->saved_available_time = s->next_output_available_time[output_port];
     s->next_output_available_time[output_port] = 
         maxd(s->next_output_available_time[output_port], tw_now(lp));
+
+    // Record how long the packet was queued before it could progress
+    cur_entry->msg.router_stall_total_time += s->next_output_available_time[output_port] - 
+                                                cur_entry->msg.router_stall_start_time;
+
     s->next_output_available_time[output_port] += injection_delay;
 
     injection_ts = s->next_output_available_time[output_port] - tw_now(lp);
