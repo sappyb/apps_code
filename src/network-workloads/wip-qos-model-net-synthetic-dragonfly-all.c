@@ -20,7 +20,7 @@ static int PAYLOAD_SZ = 2048;
 static int num_qos_levels = 1;
 static int bw_reset_window = 1000;
 static int max_qos_monitor = 50000;
-static int qos_max_tokens = 0;
+static int qos_bucket_max = 0;
 static double max_peak_throughtput = 0.0;
 static FILE* latency_file = NULL;
 
@@ -394,14 +394,8 @@ static void svr_init(
     if (traffic == QOS_NEXT_GROUP_PER_ROUTER && ns->svr_id >= num_nodes_per_router*num_qos_levels)
         return;
 
-    printf("\n ============ %d\n", ns->svr_id);
-
     if(ns->svr_id == 0)
     {
-        //printf("###_QOS_SNAPSHOT         (count)      (B/ns)       (ns)        (ns)        (ns)              (count)      (B/ns)       (ns)        (ns)        (ns)\n");
-        //printf("###_QOS_SNAPSHOT Time    Q1_msgs [throughput -  avg_lat  |  min_lat  |  max_lat  ]           Q2_msgs [throughput -  avg_lat  |  min_lat  |  max_lat  ]\n");
-        //printf("###QOS_snapshot Time Q1_msgs throughput avg_lat min_lat max_lat Q2_msgs throughput avg_lat min_lat max_lat\n");
-
         printf("###_QOS_SNAPSHOT         ");
         for(i = 0; i < num_qos_levels; i++)
             printf("(count)      (B/ns)       (ns)        (ns)        (ns)        ");
@@ -414,7 +408,7 @@ static void svr_init(
 
         printf("###QOS_snapshot Time ");
         for(i = 0; i < num_qos_levels; i++)
-            printf("Q%d_msgs throughput avg_lat min_lat max_lat", i);
+            printf("Q%d_msgs throughput avg_lat min_lat max_lat ", i);
         printf("\n");
     }
 
@@ -1083,17 +1077,17 @@ static void read_coll_placement()
 static void svr_report_stats()
 {
     int i;
-    long long *total_received_messages;
+    long long int *total_received_messages;
     tw_stime *total_sum_latency, *max_latency, *mean_latency;
     
-    total_received_messages = (long long*)calloc(num_qos_levels, sizeof(long long));
+    total_received_messages = (long long int*)calloc(num_qos_levels, sizeof(long long int));
     total_sum_latency = (tw_stime*)calloc(num_qos_levels, sizeof(tw_stime));
     max_latency = (tw_stime*)calloc(num_qos_levels, sizeof(tw_stime));
     mean_latency = (tw_stime*)calloc(num_qos_levels, sizeof(tw_stime));
 
-    MPI_Reduce( &sum_global_messages_received, &total_received_messages, num_qos_levels, MPI_LONG_LONG, MPI_SUM, 0, MPI_COMM_CODES);
-    MPI_Reduce( &sum_global_server_latency, &total_sum_latency, num_qos_levels,MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_CODES);
-    MPI_Reduce( &max_global_server_latency, &max_latency, num_qos_levels, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_CODES);
+    MPI_Reduce( sum_global_messages_received, total_received_messages, num_qos_levels, MPI_LONG_LONG, MPI_SUM, 0, MPI_COMM_CODES);
+    MPI_Reduce( sum_global_server_latency, total_sum_latency, num_qos_levels,MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_CODES);
+    MPI_Reduce( max_global_server_latency, max_latency, num_qos_levels, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_CODES);
 
     for(i = 0; i < num_qos_levels; i++){
     
@@ -1101,7 +1095,7 @@ static void svr_report_stats()
         if(!g_tw_mynode)
         {	
             printf("\nSynthetic Workload LP Stats [QOS_Class:%d]: Mean Message Latency: %lf us,  Maximum Message Latency: %lf us,  Total Messages Received: %lld",
-                    i, (float)mean_latency[i] / 1000, (float)max_latency[i] / 1000, total_received_messages[i]);
+                    i, (double)mean_latency[i] / 1000, (double)max_latency[i] / 1000, total_received_messages[i]);
         }
     }
     printf("\n");
@@ -1237,12 +1231,12 @@ int main(
     //if(!rc){
         configuration_get_value_int(&config, "PARAMS", "bw_reset_window", NULL, &bw_reset_window);
         configuration_get_value_int(&config, "PARAMS", "max_qos_monitor", NULL, &max_qos_monitor);
-        configuration_get_value_int(&config, "PARAMS", "qos_max_tokens", NULL, &qos_max_tokens);
+        configuration_get_value_int(&config, "PARAMS", "qos_bucket_max", NULL, &qos_bucket_max);
         printf("\n###_QOS Num active classes:  %d", num_qos_levels);
         printf("\n###_QOS BW reset window:     %dns", bw_reset_window);
         //bw_reset_window = 500; printf(" (snapshot: %dns)", bw_reset_window);
         printf("\n###_QOS Monitoring ends:     %dns", max_qos_monitor);
-        printf("\n###_QOS Bucket size:         %d", qos_max_tokens);
+        printf("\n###_QOS Bucket size:         %d", qos_bucket_max);
         printf("\n###_QOS Global theoretical peak throughput: %f GiB/s", max_peak_throughtput);
         printf("\n###_QOS\n");
     //}
@@ -1256,6 +1250,7 @@ int main(
     }
     model_net_report_stats(net_id);
     svr_report_stats();
+    
 #ifdef USE_RDAMARIS
     } // end if(g_st_ross_rank)
 #endif

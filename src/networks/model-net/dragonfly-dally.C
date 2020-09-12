@@ -294,7 +294,9 @@ typedef enum route_scoring_metric_t
     ALPHA = 1, //Count queue lengths and pending messages for a port
     BETA, //Expected Hops to Destination * (Count queue lengths and pending messages) for a port
     GAMMA,
-    DELTA //count queue lengths and pending messages for a port, biased 2x against nonminimal conns
+    DELTA, //count queue lengths and pending messages for a port, biased 2x against nonminimal conns
+    EPSILON, //count queue lengths and pending messages for my vc and higher priority vcs
+    ZETA  //count queue lengths and pending messages for my vc
 } route_scoring_metric_t;
 
 /* Enumeration of types of events sent between model LPs */
@@ -1027,6 +1029,7 @@ void dragonfly_dally_sample_fin(terminal_state * s,
 
 static short routing = MINIMAL;
 static short scoring = ALPHA;
+static float* scoring_factors = NULL;
 
 /*Routing Implementation Declarations*/
 static Connection dfdally_minimal_routing(router_state *s, tw_bf *bf, terminal_dally_message *msg, tw_lp *lp, int fdest_router_id);
@@ -1103,6 +1106,29 @@ static tw_stime bytes_to_ns(uint64_t bytes, double GB_p_s)
     return(time);
 }
 
+int get_vcg_from_category(terminal_dally_message * msg)
+{
+   int vcg;
+
+   if(strcmp(msg->category, "high") == 0)
+       vcg = Q_LEVEL_0;
+   else if(strcmp(msg->category, "medium") == 0)
+       vcg = Q_LEVEL_1;
+   else if(strcmp(msg->category, "low") == 0)
+       vcg = Q_LEVEL_2;
+   else if(strcmp(msg->category, "class3") == 0)
+       vcg = Q_LEVEL_3;
+   else if(strcmp(msg->category, "class4") == 0)
+       vcg = Q_LEVEL_4;
+   else if(strcmp(msg->category, "class5") == 0)
+       vcg = Q_LEVEL_5;
+   else
+       tw_error(TW_LOC, "\n priority needs to be specified with qos_levels>1 (catetory: %s)", msg->category);
+
+   assert(vcg >= Q_LEVEL_0 && vcg <= Q_LEVEL_5);
+   return vcg;
+}
+
 /* returns the dragonfly message size */
 int dragonfly_dally_get_msg_sz(void)
 {
@@ -1123,6 +1149,9 @@ static int dfdally_score_connection(router_state *s, tw_bf *bf, terminal_dally_m
 {
     int score = 0;
     int port = conn.port;
+    int vcg = get_vcg_from_category(msg);
+    int vcs_per_qos = s->params->num_vcs / s->params->num_qos_levels;
+    int base_vc = vcg * vcs_per_qos;
 
     if (port == -1) {
         return INT_MAX;
@@ -1152,9 +1181,46 @@ static int dfdally_score_connection(router_state *s, tw_bf *bf, terminal_dally_m
             if (c_minimality != C_MIN)
                 score = score * 2;
             break;
+        case EPSILON: // consider queue count and the occupancy of my vc and higher priority vcs only
+            for(int k = 0; k < base_vc + vcs_per_qos; k++)
+            {
+                score += s->vc_occupancy[port][k];
+            }
+            score += s->queued_count[port];
+            break;
+        case ZETA: // consider queue count and the occupancy of my vc only
+            for(int k = base_vc; k < base_vc + vcs_per_qos; k++)
+            {
+                score += s->vc_occupancy[port][k];
+            }
+            score += s->queued_count[port];
+            break;
         default:
             tw_error(TW_LOC, "Unsupported Scoring Protocol Error\n");
     }
+
+    if(scoring_factors != NULL)
+    {
+        // debug
+        //if(s->router_id == 2)
+        //printf("\nSCORE [%d] === %d ", c_minimality, score);
+
+        // if the factor is >0, then bias towards minimal by increasing the non-minimal score
+        if(scoring_factors[vcg] > 0 && c_minimality == C_NONMIN)
+        {
+            score = score * scoring_factors[vcg];
+        }
+        // if the factor is <0, then bias towards non-minimal by increasing the minimal score
+        if(scoring_factors[vcg] < 0 && c_minimality == C_MIN) 
+        {
+            score = score * scoring_factors[vcg] * -1;
+        }
+
+        //debug
+        //if(s->router_id == 2)
+        //printf("==> %d \n", score);
+    }
+
     return score;
 }
 
@@ -1342,12 +1408,17 @@ void dragonfly_print_params(const dragonfly_param *p, FILE * st)
         st = stdout;
 
     char tmp_str[20], min_bandwidth[60] = "", max_bandwidth[60] = "";
+    char scoring_factors_str[60] = "";
     for(int i = 0; i < p->num_qos_levels; i ++)
     {
         sprintf(tmp_str, " %3d\% |", p->qos_min_bws[i]);
         strcat(min_bandwidth, tmp_str);
         sprintf(tmp_str, " %3d\% |", p->qos_max_bws[i]);
         strcat(max_bandwidth, tmp_str);
+        if (scoring_factors != NULL){
+            sprintf(tmp_str, " %.2f |", scoring_factors[i]);
+            strcat(scoring_factors_str, tmp_str);
+        }
     }
 
     fprintf(st,"\n------------------ Dragonfly Dally Parameters ---------\n");
@@ -1382,6 +1453,8 @@ void dragonfly_print_params(const dragonfly_param *p, FILE * st)
     fprintf(st,"\tqos_bucket_max =         %d\n",qos_bucket_max);
     fprintf(st,"\tqos_min_bws =            |%s\n",min_bandwidth);
     fprintf(st,"\tqos_max_bws =            |%s\n",max_bandwidth);
+    if (scoring_factors != NULL)
+        fprintf(st,"\troute_scoring_factors =  |%s\n",scoring_factors_str);
     fprintf(st,"------------------------------------------------------\n\n");
 
 }
@@ -1592,10 +1665,47 @@ static void dragonfly_read_config(const char * anno, dragonfly_param *params)
     else if (strcmp(scoring_str, "delta") == 0) {
         scoring = DELTA;
     }
+    else if (strcmp(scoring_str, "epsilon") == 0) {
+        scoring = EPSILON;
+    }
+    else if (strcmp(scoring_str, "zeta") == 0) {
+        scoring = ZETA;
+    }
     else {
         if(!myRank)
             fprintf(stderr, "No route scoring protocol specified, setting to DELTA scoring\n");
         scoring = DELTA;
+    }
+
+    char scoring_factors_str[MAX_NAME_LENGTH];
+    rc = configuration_get_value(&config, "PARAMS", "route_scoring_factors", anno, scoring_factors_str, MAX_NAME_LENGTH);
+    if(rc) {
+        if (scoring == DELTA) {
+            fprintf(stderr, "Ignoring route_scoring_factors parameter since route_scoring_metric=DELTA. Use another route_scoring_metric (ALPHA, EPSILON, or ZETA) if you want to manually specify routing bias factors.\n");
+        }
+        else if (routing == MINIMAL || routing == NON_MINIMAL) {
+            fprintf(stderr, "Ignoring route_scoring_factors parameter since the routing algorithm is minimal or non-minimal.\n");
+        }
+        else {
+            scoring_factors = (float*)calloc(p->num_qos_levels, sizeof(float));
+
+            /* Initialize to the default routing biases */
+            for(int i = 0; i < p->num_qos_levels; i++)
+                scoring_factors[i] = 1;
+
+            char * token;
+            token = strtok(scoring_factors_str, ",");
+            int i = 0;
+            while(token != NULL)
+            {
+                sscanf(token, "%f", &(scoring_factors[i]));
+
+                i++;
+                if(i == p->num_qos_levels)
+                    break;
+                token = strtok(NULL,",");
+            }
+        }
     }
 
     rc = configuration_get_value_int(&config, "PARAMS", "notification_on_hops_greater_than", anno, &p->max_hops_notify);
@@ -1953,29 +2063,6 @@ void dragonfly_dally_report_stats()
 
 
     return;
-}
-
-int get_vcg_from_category(terminal_dally_message * msg)
-{
-   int vcg;
-
-   if(strcmp(msg->category, "high") == 0)
-       vcg = Q_LEVEL_0;
-   else if(strcmp(msg->category, "medium") == 0)
-       vcg = Q_LEVEL_1;
-   else if(strcmp(msg->category, "low") == 0)
-       vcg = Q_LEVEL_2;
-   else if(strcmp(msg->category, "class3") == 0)
-       vcg = Q_LEVEL_3;
-   else if(strcmp(msg->category, "class4") == 0)
-       vcg = Q_LEVEL_4;
-   else if(strcmp(msg->category, "class5") == 0)
-       vcg = Q_LEVEL_5;
-   else
-       tw_error(TW_LOC, "\n priority needs to be specified with qos_levels>1 (catetory: %s)", msg->category);
-
-   assert(vcg >= Q_LEVEL_0 && vcg <= Q_LEVEL_5);
-   return vcg;
 }
 
 static void update_accumulated_tokens(tw_stime now, terminal_state * s, int qos_lvl)
