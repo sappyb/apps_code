@@ -3172,7 +3172,7 @@ void router_dally_init(router_state * r, tw_lp * lp)
     r->group_id=r->router_id/p->num_routers;
     
     char rtr_bw_log[128];
-    sprintf(rtr_bw_log, "router-bw-tracker-%lu", g_tw_mynode);
+    sprintf(rtr_bw_log, "router-bw-tracker-%lu-%ld", g_tw_mynode, (long)getpid());
 
     if(dragonfly_rtr_bw_log == NULL)
     {
