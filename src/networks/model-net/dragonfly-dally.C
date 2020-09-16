@@ -2312,7 +2312,7 @@ void issue_rtr_bw_monitor_event(router_state *s, tw_bf *bf, terminal_dally_messa
             #if DEBUG_QOS == 1 
             if(dragonfly_rtr_bw_log != NULL)
             {
-                if(s->qos_green_total[i][j] > 0 || s->qos_yellow_total[i][j] > 0 || s->qos_red_total[i][j] > 0)
+                if(s->qos_green_total[i][j] > 0 || s->qos_yellow_total[i][j] > 0 || s->qos_red_total[i][j] > 0 || s->qos_data[i][j] > 0)
                 {
                     fprintf(dragonfly_rtr_bw_log, "\n %d %f %d %d %f %d %d %f %d %d %d %d %d %d", s->router_id, tw_now(lp), i, j, bw_consumed, s->qos_status[i][j], s->qos_data[i][j], s->busy_time_sample[i], s->qos_green_total[i][j], s->qos_green_sent[i][j], s->qos_yellow_total[i][j], s->qos_yellow_sent[i][j], s->qos_red_total[i][j], s->qos_red_sent[i][j]);
                 }
