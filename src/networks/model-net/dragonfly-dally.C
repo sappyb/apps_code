@@ -44,8 +44,8 @@
 #define BW_MONITOR 1
 #define DEBUG_LP 892
 #define DEBUG_QOS 1
-#define PRINT_MSG_TIMES 1
-#define DEBUG_QOS_X 1
+#define PRINT_MSG_TIMES 0
+#define DEBUG_QOS_X 0
 #define T_ID -1
 #define TRACK -1
 #define TRACK_PKT -1
@@ -3308,7 +3308,7 @@ void router_dally_init(router_state * r, tw_lp * lp)
 
     r->connMan->solidify_connections();
 
-    if(num_qos_levels > 1 && USE_TOKENS)
+    if(USE_TOKENS)
     {
         tw_stime bw_ts = bw_reset_window;
         terminal_dally_message * m;
