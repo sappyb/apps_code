@@ -1883,7 +1883,7 @@ void dragonfly_dally_report_stats()
         if (PRINT_CONFIG) 
             dragonfly_print_params(stored_params, NULL);
 
-        for(int i; i < num_qos_levels; i++)
+        for(int i = 0; i < num_qos_levels; i++)
         {
             printf("\n[QOS_Class:%d] Average number of hops traversed %f average chunk latency %lf us maximum chunk latency %lf us avg message size %lf bytes finished messages %lld finished chunks %lld", 
                     i, (float)avg_hops[i]/total_finished_chunks[i], (float) avg_time[i]/total_finished_chunks[i]/1000, max_time[i]/1000, (float)final_msg_sz[i]/total_finished_msgs[i], total_finished_msgs[i], total_finished_chunks[i]);
