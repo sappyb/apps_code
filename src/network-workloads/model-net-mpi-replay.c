@@ -2508,7 +2508,7 @@ static void get_next_mpi_operation(nw_state* s, tw_bf * bf, nw_message * m, tw_l
             
             /* Notify ranks from other job that checkpoint traffic has
              * completed */
-             printf("\n Network node %d Rank %llu finished at %lf ", s->local_rank, LLU(s->nw_id), tw_now(lp));
+             printf("\n Network node %llu Job %d Rank %d finished at %lf ", LLU(s->nw_id), s->app_id, s->local_rank, tw_now(lp));
             int num_jobs = codes_jobmap_get_num_jobs(jobmap_ctx); 
              if(num_jobs <= 1 || is_synthetic == 0)
              {
