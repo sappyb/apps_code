@@ -132,7 +132,7 @@ static int disable_delay = 0;
 static int enable_sampling = 0;
 static double sampling_interval = 5000000;
 static double sampling_end_time = 3000000000;
-static int enable_debug = 1;
+static int enable_debug = 0;
 
 /* set group context */
 struct codes_mctx mapping_context;
@@ -2522,8 +2522,6 @@ static void get_next_mpi_operation(nw_state* s, tw_bf * bf, nw_message * m, tw_l
         m->mpi_op = mpi_op; 
         m->op_type = mpi_op->op_type;
 	
-	printf("\n MPIOPn_%d ", mpi_op->op_type);
-
         if(mpi_op->op_type == CODES_WK_END)
         {
             s->elapsed_time = tw_now(lp) - s->start_time;
