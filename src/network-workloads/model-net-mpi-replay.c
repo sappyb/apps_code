@@ -2642,6 +2642,7 @@ static void get_next_mpi_operation(nw_state* s, tw_bf * bf, nw_message * m, tw_l
 		case CODES_WK_MARK:
 			{
 				printf("\n EndIteration_%d node: %llu job %d rank: %d time: %lf ", mpi_op->u.send.tag, LLU(s->nw_id), s->app_id, s->local_rank, tw_now(lp));
+				codes_issue_next_event(lp);
 			}
 			break;
 
