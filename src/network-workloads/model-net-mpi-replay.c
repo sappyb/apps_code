@@ -131,7 +131,7 @@ static int disable_delay = 0;
 static int enable_sampling = 0;
 static double sampling_interval = 5000000;
 static double sampling_end_time = 3000000000;
-static int enable_debug = 0;
+static int enable_debug = 1;
 
 /* set group context */
 struct codes_mctx mapping_context;
@@ -2477,6 +2477,9 @@ static void get_next_mpi_operation_rc(nw_state* s, tw_bf * bf, nw_message * m, t
             codes_exec_mpi_wait_all_rc(s, bf, m, lp);
 		}
 		break;
+	case CODES_WK_MARK:
+		break;
+
 		default:
 			printf("\n Invalid op type %d ", m->op_type);
 	}
@@ -2493,6 +2496,8 @@ static void get_next_mpi_operation(nw_state* s, tw_bf * bf, nw_message * m, tw_l
         codes_workload_get_next(wrkld_id, s->app_id, s->local_rank, mpi_op);
         m->mpi_op = mpi_op; 
         m->op_type = mpi_op->op_type;
+	
+	printf("\n MPIOPn_%d ", mpi_op->op_type);
 
         if(mpi_op->op_type == CODES_WK_END)
         {
@@ -2610,6 +2615,14 @@ static void get_next_mpi_operation(nw_state* s, tw_bf * bf, nw_message * m, tw_l
 			    codes_issue_next_event(lp);
             }
 			break;
+
+		case CODES_WK_MARK:
+			{
+				printf("\n EndIteration_%d node: %llu job %d rank: %d time: %lf ", mpi_op->u.send.tag, LLU(s->nw_id), s->app_id, s->local_rank, tw_now(lp));
+			}
+			break;
+
+
 			default:
 				printf("\n Invalid op type %d ", mpi_op->op_type);
 		}
