@@ -80,11 +80,12 @@ static int do_lp_io = 0;
 /* variables for loading multiple applications */
 char workloads_conf_file[8192];
 char alloc_file[8192];
-int num_traces_of_job[5];
+int num_traces_of_job[64];
+int qos_level_of_job[64];
 tw_stime soft_delay_mpi = 2500;
 tw_stime nic_delay = 1000;
 tw_stime copy_per_byte_eager = 0.55;
-char file_name_of_job[5][8192];
+char file_name_of_job[64][8192];
 
 struct codes_jobmap_ctx *jobmap_ctx;
 struct codes_jobmap_params_list jobmap_p;
@@ -255,6 +256,7 @@ struct nw_state
 	short wrkld_end;
     int app_id;
     int local_rank;
+    int qos_level;
 
     int synthetic_pattern;
     int is_finished;
@@ -1645,13 +1647,37 @@ static void codes_exec_mpi_send(nw_state* s,
     bf->c1 = 0;
     bf->c4 = 0;
    
+    /* Class names in the CODES dragonfly-dally (as at 2020/09/21 - KB):
+     * 	"high"		<- highest priority
+     * 	"medium"
+     * 	"low"
+     * 	"class3"
+     * 	"class4"
+     * 	"class5"
+     *
+     * The name of the first three classes are kept for backwards compatibility
+     */
     char prio[12];
+	switch(s->qos_level){
+		case 0: 
+			strcpy(prio, "high"); break;
+		case 1:
+			strcpy(prio, "medium"); break;
+		case 2:
+			strcpy(prio, "low"); break;
+		case 3:
+			strcpy(prio, "class3"); break;
+		case 4:
+			strcpy(prio, "class4"); break;
+		case 5:
+			strcpy(prio, "class5"); break;
+		default:
+			tw_error(TW_LOC, "\n Invalid QoS level %d", s->qos_level);
+			break;
+	}
+
     if(priority_type == 0)
     {
-        if(s->app_id == 0) 
-          strcpy(prio, "high");
-        else
-          strcpy(prio, "medium");
     }
     else if(priority_type == 1)
     {
@@ -1659,8 +1685,6 @@ static void codes_exec_mpi_send(nw_state* s,
         {
             strcpy(prio, "high");
         }
-        else
-            strcpy(prio, "medium");
     }
     else
         tw_error(TW_LOC, "\n Invalid priority type %d", priority_type);
@@ -2097,6 +2121,7 @@ void nw_test_init(nw_state* s, tw_lp* lp)
    s->all_reduce_time = 0;
    s->prev_switch = 0;
    s->max_time = 0;
+   s->qos_level = -1;
 
    char type_name[512];
 
@@ -2158,7 +2183,7 @@ void nw_test_init(nw_state* s, tw_lp* lp)
        else if(strlen(workloads_conf_file) > 0)
        {
             strcpy(oc_params.workload_name, file_name_of_job[lid.job]);
-       
+	    s->qos_level = qos_level_of_job[lid.job];
        }
 
        //assert(strcmp(oc_params.workload_name, "lammps") == 0 || strcmp(oc_params.workload_name, "nekbone") == 0);
@@ -3023,7 +3048,7 @@ int modelnet_mpi_replay(MPI_Comm comm, int* argc, char*** argv )
         char ref = '\n';
         while(!feof(name_file))
         {
-            ref = fscanf(name_file, "%d %s", &num_traces_of_job[i], file_name_of_job[i]);
+            ref = fscanf(name_file, "%d %s %d", &num_traces_of_job[i], file_name_of_job[i], &qos_level_of_job[i]);
             
             if(ref != EOF && strncmp(file_name_of_job[i], "synthetic", 9) == 0)
             {
@@ -3034,7 +3059,7 @@ int modelnet_mpi_replay(MPI_Comm comm, int* argc, char*** argv )
             else if(ref!=EOF)
             {
                 if(enable_debug)
-                    printf("\n%d traces of app %s \n", num_traces_of_job[i], file_name_of_job[i]);
+                    printf("\n%d traces of app %s (default qos class: %d)\n", num_traces_of_job[i], file_name_of_job[i], qos_level_of_job[i]);
 
                 num_net_traces += num_traces_of_job[i];
                 num_dumpi_traces += num_traces_of_job[i];
