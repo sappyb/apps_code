@@ -130,8 +130,8 @@ static long *packet_gen, *packet_fin;
 static double maxd(double a, double b) { return a < b ? b : a; }
 
 /* minimal and non-minimal packet counts for adaptive routing*/
-static int *minimal_count, *nonmin_count;
-static int num_routers_per_mgrp = 0;
+static long *minimal_count, *nonmin_count;
+static long num_routers_per_mgrp = 0;
 
 typedef struct dragonfly_param dragonfly_param;
 /* annotation-specific parameters (unannotated entry occurs at the 
@@ -399,10 +399,10 @@ struct terminal_state
 {
     uint64_t packet_counter;
 
-    int *packet_gen;
-    int *packet_fin;
+    long *packet_gen;
+    long *packet_fin;
 
-    int *total_gen_size;
+    long *total_gen_size;
 
     // Dragonfly specific parameters
     unsigned int router_id;
@@ -1982,7 +1982,7 @@ void dragonfly_dally_report_stats()
     tw_stime *avg_time, *max_time;
     long *total_gen, *total_fin;
     long *total_local_packets_sr, *total_local_packets_sg, *total_remote_packets;
-    int *total_minimal_packets, *total_nonmin_packets;
+    long *total_minimal_packets, *total_nonmin_packets;
 
     int num_qos_levels = dragonfly_num_qos_levels;
 
@@ -2001,8 +2001,8 @@ void dragonfly_dally_report_stats()
     total_local_packets_sg = (long*)calloc(num_qos_levels, sizeof(long));
     total_remote_packets = (long*)calloc(num_qos_levels, sizeof(long));
 
-    total_minimal_packets = (int*)calloc(num_qos_levels, sizeof(int));
-    total_nonmin_packets = (int*)calloc(num_qos_levels, sizeof(int));
+    total_minimal_packets = (long*)calloc(num_qos_levels, sizeof(long));
+    total_nonmin_packets = (long*)calloc(num_qos_levels, sizeof(long));
 
     //printf("\n_QOS=====================2 num_qos_levels:%d", num_qos_levels);
     MPI_Reduce( total_hops, avg_hops, num_qos_levels, MPI_LONG_LONG, MPI_SUM, 0, MPI_COMM_CODES);
@@ -2021,8 +2021,8 @@ void dragonfly_dally_report_stats()
 
     if(routing == ADAPTIVE || routing == PROG_ADAPTIVE || routing == PROG_ADAPTIVE_LEGACY || SHOW_ADAP_STATS)
     {
-        MPI_Reduce(minimal_count, total_minimal_packets, num_qos_levels, MPI_INT, MPI_SUM, 0, MPI_COMM_CODES);
-        MPI_Reduce(nonmin_count, total_nonmin_packets, num_qos_levels, MPI_INT, MPI_SUM, 0, MPI_COMM_CODES);
+        MPI_Reduce(minimal_count, total_minimal_packets, num_qos_levels, MPI_LONG, MPI_SUM, 0, MPI_COMM_CODES);
+        MPI_Reduce(nonmin_count, total_nonmin_packets, num_qos_levels, MPI_LONG, MPI_SUM, 0, MPI_COMM_CODES);
     }
 
     /* print statistics */
@@ -2036,7 +2036,7 @@ void dragonfly_dally_report_stats()
             printf("\n[QOS_Class:%d] Average number of hops traversed %f average chunk latency %lf us maximum chunk latency %lf us avg message size %lf bytes finished messages %lld finished chunks %lld", 
                     i, (float)avg_hops[i]/total_finished_chunks[i], (float) avg_time[i]/total_finished_chunks[i]/1000, max_time[i]/1000, (float)final_msg_sz[i]/total_finished_msgs[i], total_finished_msgs[i], total_finished_chunks[i]);
             if(routing == ADAPTIVE || routing == PROG_ADAPTIVE || routing == PROG_ADAPTIVE_LEGACY || SHOW_ADAP_STATS)
-                    printf("\n[QOS_Class:%d] ADAPTIVE ROUTING STATS: %d chunks routed minimally %d chunks routed non-minimally completed packets %lld", 
+                    printf("\n[QOS_Class:%d] ADAPTIVE ROUTING STATS: %ld chunks routed minimally %ld chunks routed non-minimally completed packets %lld", 
                             i, total_minimal_packets[i], total_nonmin_packets[i], total_finished_chunks[i]);
             printf("\n[QOS_Class:%d] Total packets generated %ld finished %ld Locally routed- same router %ld different-router %ld Remote (inter-group) %ld \n", 
                     i, total_gen[i], total_fin[i], total_local_packets_sr[i], total_local_packets_sg[i], total_remote_packets[i]);
@@ -3039,8 +3039,8 @@ void terminal_dally_init( terminal_state * s, tw_lp * lp )
         packet_gen = (long*)calloc(num_qos_levels, sizeof(long));
         packet_fin = (long*)calloc(num_qos_levels, sizeof(long));
 
-        minimal_count = (int*)calloc(num_qos_levels, sizeof(int));
-        nonmin_count = (int*)calloc(num_qos_levels, sizeof(int));
+        minimal_count = (long*)calloc(num_qos_levels, sizeof(long));
+        nonmin_count = (long*)calloc(num_qos_levels, sizeof(long));
 
 #if PRINT_MSG_TIMES == 1
         rdfdally_file = fopen("/tmp/r-dfdally.out", "w");
@@ -3048,9 +3048,9 @@ void terminal_dally_init( terminal_state * s, tw_lp * lp )
 #endif
     }
  
-    s->packet_gen = (int*)calloc(num_qos_levels, sizeof(int));
-    s->packet_fin = (int*)calloc(num_qos_levels, sizeof(int));
-    s->total_gen_size = (int*)calloc(num_qos_levels, sizeof(int));;
+    s->packet_gen = (long*)calloc(num_qos_levels, sizeof(long));
+    s->packet_fin = (long*)calloc(num_qos_levels, sizeof(long));
+    s->total_gen_size = (long*)calloc(num_qos_levels, sizeof(long));;
     s->is_monitoring_bw = 0;
 
 
@@ -4326,7 +4326,7 @@ dragonfly_dally_terminal_final( terminal_state * s,
     }
     for(int i = 0; i < dragonfly_num_qos_levels; i++)
     {
-        written += sprintf(s->output_buf2 + written, "%llu %u %d %d %llu %lf %lf %lf %ld %lf %lf\n", 
+        written += sprintf(s->output_buf2 + written, "%llu %u %d %ld %llu %lf %lf %lf %ld %lf %lf\n", 
                 LLU(lp->gid), s->terminal_id, i, s->total_gen_size[i], LLU(s->total_msg_size[i]), s->total_time[i]/s->finished_chunks[i], s->max_latency[i], s->min_latency[i],
                 s->finished_packets[i], (double)s->total_hops[i]/s->finished_chunks[i], s->busy_time);
     }
