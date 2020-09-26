@@ -286,6 +286,7 @@ struct nw_state
     int num_reduce;
 
     double all_reduce_time;
+    double all_reduce_time_max;
     int num_all_reduce;
 
 	double elapsed_time;
@@ -2119,6 +2120,7 @@ void nw_test_init(nw_state* s, tw_lp* lp)
    s->num_reduce = 0;
    s->reduce_time = 0;
    s->all_reduce_time = 0;
+   s->all_reduce_time_max = 0;
    s->prev_switch = 0;
    s->max_time = 0;
    s->qos_level = -1;
@@ -2612,11 +2614,14 @@ static void get_next_mpi_operation(nw_state* s, tw_bf * bf, nw_message * m, tw_l
                 if(s->col_time > 0)
                 {
                     bf->c27 = 1;
+		    double op_time = tw_now(lp) - s->col_time;
                     m->rc.saved_delay = s->all_reduce_time;
-                    s->all_reduce_time += (tw_now(lp) - s->col_time);
+                    s->all_reduce_time += op_time;
                     m->rc.saved_send_time = s->col_time;
                     s->col_time = 0;
                     s->num_all_reduce++;
+		    if(s->all_reduce_time_max < op_time)
+			    s->all_reduce_time_max = op_time;
                 }
                 else
                 {
@@ -2755,7 +2760,7 @@ void nw_test_finalize(nw_state* s, tw_lp* lp)
         written = 0;
 
         if(debug_cols)
-            written += sprintf(s->col_stats + written, "%llu \t %lf \n", LLU(s->nw_id), ns_to_s(s->all_reduce_time / s->num_all_reduce));
+            written += sprintf(s->col_stats + written, "%llu \t %lf \t %lf \n", LLU(s->nw_id), ns_to_s(s->all_reduce_time / s->num_all_reduce)), ns_to_s(s->all_reduce_time_max);
 		
         lp_io_write(lp->gid, (char*)"avg-all-reduce-time", written, s->col_stats);
 
