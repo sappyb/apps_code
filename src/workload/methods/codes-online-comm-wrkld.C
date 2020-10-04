@@ -786,12 +786,12 @@ static void workload_caller(void * arg)
 {
     shared_context* sctx = static_cast<shared_context*>(arg);
 
-    if(strcmp(sctx->workload_name, "lammps") == 0)
+    if(strcmp(sctx->workload_name, "lammps") == 0 || strcmp(sctx->workload_name, "lammps1") == 0)
     {
         LAMMPS_SWM * lammps_swm = static_cast<LAMMPS_SWM*>(sctx->swm_obj);
         lammps_swm->call();
     }
-    else if(strcmp(sctx->workload_name, "nekbone") == 0) 
+    else if(strcmp(sctx->workload_name, "nekbone") == 0 || strcmp(sctx->workload_name, "nekbone1") == 0) 
     {
         NEKBONESWMUserCode * nekbone_swm = static_cast<NEKBONESWMUserCode*>(sctx->swm_obj);
         nekbone_swm->call();
@@ -850,9 +850,17 @@ static int comm_online_workload_load(const char * params, int app_id, int rank)
     {
         path.append("/lammps_workload.json");
     }
+    else if(strcmp(o_params->workload_name, "lammps1") == 0)
+    {
+        path.append("/lammps_workload1.json");
+    }
     else if(strcmp(o_params->workload_name, "nekbone") == 0)
     {
         path.append("/workload.json"); 
+    }
+    else if(strcmp(o_params->workload_name, "nekbone1") == 0)
+    {
+        path.append("/workload1.json"); 
     }
     else if(strcmp(o_params->workload_name, "nearest_neighbor") == 0)
     {
@@ -908,12 +916,12 @@ static int comm_online_workload_load(const char * params, int app_id, int rank)
         printf("%s \n", e.what());
         return -1;
     }
-    if(strcmp(o_params->workload_name, "lammps") == 0)
+    if(strcmp(o_params->workload_name, "lammps") == 0 || strcmp(o_params->workload_name, "lammps1") == 0)
     {
         LAMMPS_SWM * lammps_swm = new LAMMPS_SWM(root, generic_ptrs);
         my_ctx->sctx.swm_obj = (void*)lammps_swm;
     }
-    else if(strcmp(o_params->workload_name, "nekbone") == 0)
+    else if(strcmp(o_params->workload_name, "nekbone") == 0 || strcmp(o_params->workload_name, "nekbone1") == 0)
     {
         NEKBONESWMUserCode * nekbone_swm = new NEKBONESWMUserCode(root, generic_ptrs);
         my_ctx->sctx.swm_obj = (void*)nekbone_swm;
