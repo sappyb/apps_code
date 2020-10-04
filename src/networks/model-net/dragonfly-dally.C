@@ -2371,7 +2371,7 @@ static int token_get_next_vcg(terminal_state * s, tw_bf * bf, terminal_dally_mes
 
     // This block of code could be summarized, but I structure it similar to the token_get_next_router_vcg
     // to leave room for adding debug code in the future. - KB
-    if(BW_MONITOR == 1)
+    if(BW_MONITOR == 1 && num_qos_levels > 1)
     {
         int first_green = -1;       // Marks the class that can send next
         int first_yellow = -1;      // If no classes are marked green, this class will send next
@@ -2553,7 +2553,7 @@ static int token_get_next_router_vcg(router_state * s, tw_bf * bf, terminal_dall
     int chunk_size = s->params->chunk_size;
 //    int bw_consumption[num_qos_levels];
     /* First make sure the bandwidth consumptions are up to date. */
-    if(BW_MONITOR == 1)
+    if(BW_MONITOR == 1 && num_qos_levels > 1)
     {
         // The following seem unused.
         int vc_size = s->params->global_vc_size;
