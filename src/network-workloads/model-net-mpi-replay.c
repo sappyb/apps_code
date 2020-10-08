@@ -92,6 +92,7 @@ char file_name_of_job[64][8192];
 ======= */
 int num_traces_of_job[MAX_JOBS];
 int is_job_synthetic[MAX_JOBS]; //0 if job is not synthetic 1 if job is
+int qos_level_of_job[MAX_JOBS];
 tw_stime soft_delay_mpi = 2500;
 tw_stime nic_delay = 1000;
 tw_stime copy_per_byte_eager = 0.55;
