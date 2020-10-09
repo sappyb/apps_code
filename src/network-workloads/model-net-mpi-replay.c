@@ -815,6 +815,25 @@ static void gen_synthetic_tr(nw_state * s, tw_bf * bf, nw_message * m, tw_lp * l
     /* Record length for reverse handler*/
     m->rc.saved_syn_length = length;
 
+    char prio[12];
+	switch(s->qos_level){
+		case 0:
+			strcpy(prio, "high"); break;
+		case 1:
+			strcpy(prio, "medium"); break;
+		case 2:
+			strcpy(prio, "low"); break;
+		case 3:
+			strcpy(prio, "class3"); break;
+		case 4:
+			strcpy(prio, "class4"); break;
+		case 5:
+			strcpy(prio, "class5"); break;
+		default:
+			tw_error(TW_LOC, "\n Invalid QoS level %d", s->qos_level);
+			break;
+	}
+
     if(length > 0)
     {
         // m->event_array_rc = (model_net_event_return) malloc(length * sizeof(model_net_event_return));
@@ -834,7 +853,7 @@ static void gen_synthetic_tr(nw_state * s, tw_bf * bf, nw_message * m, tw_lp * l
             remote_m.fwd.src_rank = s->local_rank;
 
             // printf("\nAPP %d SRC %d Dest %d (twid %llu)", jid.job, s->local_rank, dest_svr[i], global_dest_id);
-            m->event_rc = model_net_event(net_id, "medium", global_dest_id, payload_sz, 0.0, 
+            m->event_rc = model_net_event(net_id, prio, global_dest_id, payload_sz, 0.0,
                     sizeof(nw_message), (const void*)&remote_m, 
                     0, NULL, lp);
             
@@ -1659,7 +1678,7 @@ static void codes_exec_mpi_send(nw_state* s,
      */
     char prio[12];
 	switch(s->qos_level){
-		case 0: 
+		case 0:
 			strcpy(prio, "high"); break;
 		case 1:
 			strcpy(prio, "medium"); break;
@@ -1930,12 +1949,26 @@ static void send_ack_back(nw_state* s, tw_bf * bf, nw_message * m, tw_lp * lp, m
     remote_m.fwd.matched_req = matched_req;
 
     char prio[12];
+	switch(s->qos_level){
+		case 0:
+			strcpy(prio, "high"); break;
+		case 1:
+			strcpy(prio, "medium"); break;
+		case 2:
+			strcpy(prio, "low"); break;
+		case 3:
+			strcpy(prio, "class3"); break;
+		case 4:
+			strcpy(prio, "class4"); break;
+		case 5:
+			strcpy(prio, "class5"); break;
+		default:
+			tw_error(TW_LOC, "\n Invalid QoS level %d", s->qos_level);
+			break;
+	}
+
     if(priority_type == 0)
     {
-        if(s->app_id == 0) 
-          strcpy(prio, "high");
-        else if(s->app_id == 1)
-          strcpy(prio, "medium");
     }
     else if(priority_type == 1)
     {
@@ -1943,11 +1976,9 @@ static void send_ack_back(nw_state* s, tw_bf * bf, nw_message * m, tw_lp * lp, m
         {
             strcpy(prio, "high");
         }
-        else
-            strcpy(prio, "medium");
     }
     else
-       tw_error(TW_LOC, "\n Invalid app id");
+        tw_error(TW_LOC, "\n Invalid priority type %d", priority_type);
     
     m->event_rc = model_net_event_mctx(net_id, &mapping_context, &mapping_context,
         prio, dest_rank, CONTROL_MSG_SZ, (self_overhead + soft_delay_mpi + nic_delay),
@@ -2246,6 +2277,7 @@ void nw_test_init(nw_state* s, tw_lp* lp)
         {
             s->synthetic_pattern = synthetic_pattern;
         }
+	s->qos_level = qos_level_of_job[lid.job];
 
         tw_event * e;
         nw_message * m_new;
