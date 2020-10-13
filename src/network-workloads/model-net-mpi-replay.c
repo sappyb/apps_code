@@ -31,7 +31,7 @@
 #define COL_TAG 1235
 #define BAR_TAG 1234
 #define PRINT_SYNTH_TRAFFIC 1
-#define MAX_JOBS 5
+#define MAX_JOBS 64
 
 static int msg_size_hash_compare(
             void *key, struct qhash_head *link);
