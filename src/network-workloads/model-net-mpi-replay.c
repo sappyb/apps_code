@@ -30,7 +30,7 @@
 #define MAX_STATS 65536
 #define COL_TAG 1235
 #define BAR_TAG 1234
-#define PRINT_SYNTH_TRAFFIC 1
+#define PRINT_SYNTH_TRAFFIC 0
 #define MAX_JOBS 64
 
 static int msg_size_hash_compare(
@@ -93,6 +93,7 @@ char file_name_of_job[64][8192];
 int num_traces_of_job[MAX_JOBS];
 int is_job_synthetic[MAX_JOBS]; //0 if job is not synthetic 1 if job is
 int qos_level_of_job[MAX_JOBS];
+float mean_interval_of_job[MAX_JOBS];
 tw_stime soft_delay_mpi = 2500;
 tw_stime nic_delay = 1000;
 tw_stime copy_per_byte_eager = 0.55;
@@ -184,7 +185,8 @@ enum TRAFFIC
     NEAREST_NEIGHBOR = 2, /* sends message to the next node (potentially connected to the same router) */
     ALLTOALL = 3, /* sends message to all other nodes */
     STENCIL = 4, /* sends message to 4 nearby neighbors */
-    PERMUTATION = 5
+    PERMUTATION = 5,
+    BISECTION = 6
 };
 struct mpi_workload_sample
 {
@@ -931,6 +933,13 @@ static void gen_synthetic_tr(nw_state * s, tw_bf * bf, nw_message * m, tw_lp * l
             dest_svr[0] = (s->local_rank + 1) % num_clients;
         }
         break;
+        case BISECTION:
+        {
+            length = 1;
+            dest_svr = (int*) calloc(1, sizeof(int));
+            dest_svr[0] = (s->local_rank + (num_clients/2)) % num_clients;
+        }
+        break;
         case ALLTOALL:
         {
             dest_svr = (int*) calloc(num_clients-1, sizeof(int));
@@ -1026,7 +1035,9 @@ static void gen_synthetic_tr(nw_state * s, tw_bf * bf, nw_message * m, tw_lp * l
     s->ross_sample.num_sends++;
 
     /* New event after MEAN_INTERVAL */  
-    tw_stime ts = mean_interval  + tw_rand_exponential(lp->rng, noise); 
+    //tw_stime ts = mean_interval  + tw_rand_exponential(lp->rng, noise); 
+    //TODO: use of mean_interval_of_job is not RC safe ... or is it?
+    tw_stime ts = mean_interval_of_job[s->app_id] + tw_rand_exponential(lp->rng, noise);
     tw_event * e;
     nw_message * m_new;
     e = tw_event_new(lp->gid, ts, lp);
@@ -2430,7 +2441,7 @@ void nw_test_init(nw_state* s, tw_lp* lp)
    if(strncmp(file_name_of_job[lid.job], "synthetic", 9) == 0)
    {
         sscanf(file_name_of_job[lid.job], "synthetic%d", &synthetic_pattern);
-        if(synthetic_pattern <=0 || synthetic_pattern > 5)
+        if(synthetic_pattern <=0 || synthetic_pattern > 6)
         {
             printf("\n Undefined synthetic pattern: setting to uniform random ");
             s->synthetic_pattern = 1;
@@ -2744,7 +2755,7 @@ static void get_next_mpi_operation(nw_state* s, tw_bf * bf, nw_message * m, tw_l
                 return;
              }
 
-            if(num_qos_levels == 1) //notify neighbor isn't really compatible with QoS, so notify_neighbor is only called if num_qos_levels == 1 (QoS off)
+            //if(num_qos_levels == 1) //notify neighbor isn't really compatible with QoS, so notify_neighbor is only called if num_qos_levels == 1 (QoS off)
                 notify_neighbor(s, lp, bf, m);
 //             printf("Client rank %llu completed workload, local rank %d .\n", s->nw_id, s->local_rank);
 
@@ -3252,7 +3263,7 @@ int modelnet_mpi_replay(MPI_Comm comm, int* argc, char*** argv )
         char ref = '\n';
         while(!feof(name_file))
         {
-            ref = fscanf(name_file, "%d %s %d", &num_traces_of_job[i], file_name_of_job[i], &qos_level_of_job[i]);
+            ref = fscanf(name_file, "%d %s %d %f", &num_traces_of_job[i], file_name_of_job[i], &qos_level_of_job[i], &mean_interval_of_job[i]);
             
             if(ref != EOF && strncmp(file_name_of_job[i], "synthetic", 9) == 0)
             {
@@ -3260,6 +3271,10 @@ int modelnet_mpi_replay(MPI_Comm comm, int* argc, char*** argv )
               num_net_traces += num_traces_of_job[i];
               is_job_synthetic[i] = 1;
               is_synthetic = 1;
+	      // Make sure BISECTION job has even number of clients
+	      if (strcmp(file_name_of_job[i], "synthetic6") == 0 && num_traces_of_job[i] % 2 != 0)
+		tw_error(TW_LOC, "BISECTION requires and even number of nodes.");
+
             }
             else if(ref!=EOF)
             {
