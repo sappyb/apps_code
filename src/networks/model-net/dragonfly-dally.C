@@ -46,6 +46,7 @@
 #define DEBUG_QOS 1
 #define DEBUG_QOS_X 0
 #define DEBUG_QOS_R 1
+#define DEBUG_QOS_T 1
 #define PRINT_MSG_TIMES 0
 #define T_ID -1
 #define TRACK -1
@@ -153,6 +154,7 @@ static int terminal_magic_num = 0;
 
 static FILE * dragonfly_rtr_bw_log = NULL;
 static FILE * dragonfly_net_pk_log = NULL;
+static FILE * dragonfly_term_pk_log = NULL;
 //static FILE * dragonfly_term_bw_log = NULL;
 
 static int sample_bytes_written = 0;
@@ -2285,6 +2287,18 @@ void issue_bw_monitor_event(terminal_state * s, tw_bf * bf, terminal_dally_messa
     msg->rc_is_qos_set = 1;
     //RC data storage end.
 
+    #if DEBUG_QOS_T == 1 
+    // Print packet stats
+    if(dragonfly_term_pk_log != NULL)
+    {
+        for(int i = 0; i < num_qos_levels; i++)
+        {
+            // time-stamp %d qos-level %lf avg-chunk-latency %lf max-chunk-latency avg-hops min-routed-chunks nonmin-routed-chunks
+            fprintf(dragonfly_term_pk_log, "\n %.0f %d %.2lf %.2lf %.2lf", tw_now(lp), i, s->total_time[i]/s->finished_chunks[i], s->min_latency[i], s->max_latency[i]);
+        }
+    }
+    #endif   
+
     /* Reset the qos status and bandwidth consumption. */
     for(int i = 0; i < num_qos_levels; i++)
     {
@@ -3139,7 +3153,7 @@ void terminal_dally_init( terminal_state * s, tw_lp * lp )
             fprintf(dragonfly_term_bw_log, "\n term-id time-stamp port-id busy-time");
         }*/
 
-    if(num_qos_levels > 1 && USE_TOKENS)
+    if(USE_TOKENS)
     {
         tw_stime bw_ts = bw_reset_window;
         terminal_dally_message * m;
@@ -3204,6 +3218,13 @@ void router_dally_init(router_state * r, tw_lp * lp)
 
         fprintf(dragonfly_net_pk_log, "\n time-stamp qos-level avg-hops min-routed-chunks nonmin-routed-chunks");
         //fprintf(dragonfly_net_pk_log, "\n time-stamp qos-level avg-chunk-latency max-chunk-latency avg-hops min-routed-chunks nonmin-routed-chunks");
+    }
+    char term_pk_log[128];
+    sprintf(term_pk_log, "terminal-packet-stats-%lu-%ld", g_tw_mynode, (long)getpid());
+    if(dragonfly_term_pk_log == NULL)
+    {
+        dragonfly_term_pk_log = fopen(term_pk_log, "w+");
+        fprintf(dragonfly_term_pk_log, "\n time-stamp term-id qos-level pk-avg pk-min pk-max");
     }
 
    //printf("\n Local router id %d global id %d ", r->router_id, lp->gid);
