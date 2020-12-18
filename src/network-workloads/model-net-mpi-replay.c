@@ -81,6 +81,8 @@ static int do_lp_io = 0;
 
 /* variables for loading multiple applications */
 char workloads_conf_file[8192];
+char workloads_timer_file[8192];
+char workloads_period_file[8192];
 char alloc_file[8192];
 /*<<<<<<< .merge_file_wXvvvP
 int num_traces_of_job[64];
@@ -94,6 +96,11 @@ int num_traces_of_job[MAX_JOBS];
 int is_job_synthetic[MAX_JOBS]; //0 if job is not synthetic 1 if job is
 int qos_level_of_job[MAX_JOBS];
 float mean_interval_of_job[MAX_JOBS];
+long job_timer1[MAX_JOBS];
+long job_timer2[MAX_JOBS];
+int period_count[MAX_JOBS];
+long period_time[MAX_JOBS][100];
+float period_interval[MAX_JOBS][100];
 tw_stime soft_delay_mpi = 2500;
 tw_stime nic_delay = 1000;
 tw_stime copy_per_byte_eager = 0.55;
@@ -174,6 +181,7 @@ enum MPI_NW_EVENTS
     CLI_BCKGND_FIN,
     CLI_BCKGND_ARRIVE,
     CLI_BCKGND_GEN,
+    CLI_BCKGND_CHANGE,
     CLI_NBR_FINISH,
     CLI_OTHER_FINISH //received when another workload has finished
 };
@@ -1002,6 +1010,11 @@ static void gen_synthetic_tr(nw_state * s, tw_bf * bf, nw_message * m, tw_lp * l
 			break;
 	}
 
+	if(tw_now(lp) < job_timer2[s->app_id] && job_timer1[s->app_id] > 0){
+		if(tw_now(lp) > job_timer1[s->app_id]){
+			length = 0;
+		}
+	}
     if(length > 0)
     {
         // m->event_array_rc = (model_net_event_return) malloc(length * sizeof(model_net_event_return));
@@ -2461,6 +2474,19 @@ void nw_test_init(nw_state* s, tw_lp* lp)
         tw_event_send(e);
         is_synthetic = 1;
 
+	if(lid.rank == 0){
+		for(int k = 0; k < period_count[lid.job]; k++){
+			tw_event * e2;
+			nw_message * m_new2;
+			tw_stime ts2 = period_time[lid.job][k];
+			e2 = tw_event_new(lp->gid, ts2, lp);
+			m_new2 = (nw_message*)tw_event_data(e2);
+			m_new2->msg_type = CLI_BCKGND_CHANGE;
+			m_new2->fwd.msg_send_time = period_interval[lid.job][k];
+			tw_event_send(e2);
+		}
+	}
+
    }
    else 
    {
@@ -2593,6 +2619,11 @@ void nw_test_event_handler(nw_state* s, tw_bf * bf, nw_message * m, tw_lp * lp)
         case CLI_BCKGND_GEN:
             gen_synthetic_tr(s, bf, m, lp);
         break;
+
+        case CLI_BCKGND_CHANGE:
+		mean_interval_of_job[s->app_id] = m->fwd.msg_send_time;
+		printf("======== CHANGE [now: %lf] App:%d | Interval: %f\n", tw_now(lp), s->app_id, mean_interval_of_job[s->app_id]);
+	break;
 
         case CLI_BCKGND_ARRIVE:
             arrive_syn_tr(s, bf, m, lp);
@@ -3034,6 +3065,10 @@ void nw_test_event_handler_rc(nw_state* s, tw_bf * bf, nw_message * m, tw_lp * l
             gen_synthetic_tr_rc(s, bf, m, lp);
             break;
 
+        case CLI_BCKGND_CHANGE:
+
+	    break;
+
         case CLI_BCKGND_ARRIVE:
             arrive_syn_tr_rc(s, bf, m, lp);
             break;
@@ -3060,6 +3095,8 @@ const tw_optdef app_opt [] =
 	TWOPT_CHAR("workload_file", workload_file, "workload file name"),
 	TWOPT_CHAR("alloc_file", alloc_file, "allocation file name"),
 	TWOPT_CHAR("workload_conf_file", workloads_conf_file, "workload config file name"),
+	TWOPT_CHAR("workload_timer_file", workloads_timer_file, "workload time (start/stop) file name"),
+	TWOPT_CHAR("workload_period_file", workloads_period_file, "workload periods file name"),
 	TWOPT_UINT("num_net_traces", num_net_traces, "number of network traces"),
 	TWOPT_UINT("priority_type", priority_type, "Priority type (zero): high priority to foreground traffic and low to background/2nd job, (one): high priority to collective operations "),
 	TWOPT_UINT("payload_sz", payload_sz, "size of payload for synthetic traffic "),
@@ -3233,6 +3270,8 @@ int modelnet_mpi_replay(MPI_Comm comm, int* argc, char*** argv )
 		printf("Usage: mpirun -np n ./modelnet-mpi-replay --sync=1/3"
                 " --workload_type=dumpi/online"
 		" --workload_conf_file=prefix-workload-file-name"
+		" --workload_timer_file=timer-file"
+		" --workload_period_file=timer-file"
                 " --alloc_file=alloc-file-name"
 #ifdef ENABLE_CORTEX_PYTHON
 		" --cortex-file=cortex-file-name"
@@ -3294,6 +3333,44 @@ int modelnet_mpi_replay(MPI_Comm comm, int* argc, char*** argv )
         alloc_spec = 1;
         jobmap_p.alloc_file = alloc_file;
         jobmap_ctx = codes_jobmap_configure(CODES_JOBMAP_LIST, &jobmap_p);
+	
+
+	if(strlen(workloads_timer_file) > 0){
+		FILE *timer_file = fopen(workloads_timer_file, "r");
+		if(!timer_file)
+		    tw_error(TW_LOC, "\n Could not open file %s ", workloads_timer_file);
+		
+		int i = 0;
+		char ref = '\n';
+		while(!feof(timer_file))
+		{
+		    ref = fscanf(timer_file, "%ld %ld", &job_timer1[i], &job_timer2[i]);
+			i++;
+		}
+		fclose(timer_file);
+	}
+
+	if(strlen(workloads_period_file) > 0){
+		FILE *period_file = fopen(workloads_period_file, "r");
+		if(!period_file)
+		    tw_error(TW_LOC, "\n Could not open file %s ", workloads_period_file);
+		
+		int i = 0;
+		char ref = '\n';
+		while(!feof(period_file))
+		{
+		    ref = fscanf(period_file, "%d", &period_count[i]);
+		    if(ref != EOF){
+			    printf("======== [ID: %d] Period count: %d\n", i, period_count[i]);
+			    for(int k = 0; k < period_count[i]; k++){
+				fscanf(period_file, "%ld:%f", &period_time[i][k], &period_interval[i][k]);
+				printf("======== [ID: %d] Period time and interval: %ld and %f\n", i, period_time[i][k], period_interval[i][k]);
+			    }
+		    }
+		    i++;
+		}
+		fclose(period_file);
+	}
     }
     else
     {
