@@ -455,6 +455,11 @@ struct terminal_state
     tw_stime *max_latency;
     tw_stime *min_latency;
 
+    tw_stime *period_total_time;
+    long *period_finished_chunks;
+    tw_stime *period_max_latency;
+    tw_stime *period_min_latency;
+
     char output_buf[4096];
     char output_buf2[4096];
 
@@ -2294,7 +2299,8 @@ void issue_bw_monitor_event(terminal_state * s, tw_bf * bf, terminal_dally_messa
         for(int i = 0; i < num_qos_levels; i++)
         {
             // time-stamp %d qos-level %lf avg-chunk-latency %lf max-chunk-latency avg-hops min-routed-chunks nonmin-routed-chunks
-            fprintf(dragonfly_term_pk_log, "\n %.0f %d %.2lf %.2lf %.2lf", tw_now(lp), i, s->total_time[i]/s->finished_chunks[i], s->min_latency[i], s->max_latency[i]);
+	    if(s->min_latency[i] > 0)
+            	fprintf(dragonfly_term_pk_log, "\n %.0f %d %.2lf %.2lf %.2lf", tw_now(lp), i, s->period_total_time[i]/s->period_finished_chunks[i], s->period_min_latency[i], s->period_max_latency[i]);
         }
     }
     #endif   
@@ -2304,6 +2310,11 @@ void issue_bw_monitor_event(terminal_state * s, tw_bf * bf, terminal_dally_messa
     {
         s->qos_status[i] = Q_ACTIVE_UNSATED;
         s->qos_data[i] = 0;
+
+	s->period_total_time[i] = 0;
+	s->period_finished_chunks[i] = 0;
+	s->period_min_latency[i] = INT_MAX;
+	s->period_max_latency[i] = 0;
     }
 
     if(tw_now(lp) > max_qos_monitor)
@@ -3086,6 +3097,11 @@ void terminal_dally_init( terminal_state * s, tw_lp * lp )
     s->min_latency = (tw_stime*)calloc(num_qos_levels, sizeof(tw_stime));
     s->max_latency = (tw_stime*)calloc(num_qos_levels, sizeof(tw_stime));
 
+    s->period_total_time = (tw_stime*)calloc(num_qos_levels, sizeof(tw_stime));
+    s->period_min_latency = (tw_stime*)calloc(num_qos_levels, sizeof(tw_stime));
+    s->period_max_latency = (tw_stime*)calloc(num_qos_levels, sizeof(tw_stime));
+    s->period_finished_chunks = (long*)calloc(num_qos_levels, sizeof(long));
+
     s->link_traffic=0.0;
     s->finished_msgs = (long*)calloc(num_qos_levels, sizeof(long));
     s->finished_chunks = (long*)calloc(num_qos_levels, sizeof(long));
@@ -3128,6 +3144,12 @@ void terminal_dally_init( terminal_state * s, tw_lp * lp )
         s->qos_max_token_count[i] = 0.0;
         s->qos_min_update_time[i] = 0.0;
         s->qos_max_update_time[i] = 0.0;
+
+
+	    s->period_total_time[i] = 0;
+	    s->period_min_latency[i] = INT_MAX;
+	    s->period_max_latency[i] = 0.0;
+	    s->period_finished_chunks[i] = 0;
     }
 
     s->last_qos_lvl = 0;
@@ -4113,6 +4135,7 @@ static void packet_arrive(terminal_state * s, tw_bf * bf, terminal_dally_message
     N_finished_chunks[vcg]++;
     /* Finished chunks on a LP basis */
     s->finished_chunks[vcg]++;
+    s->period_finished_chunks[vcg]++;
     /* Finished chunks per sample */
     s->fin_chunks_sample++;
     s->ross_sample.fin_chunks_sample++;
@@ -4150,6 +4173,7 @@ static void packet_arrive(terminal_state * s, tw_bf * bf, terminal_dally_message
     /* save the total time per LP */
     msg->saved_avg_time = s->total_time[vcg];
     s->total_time[vcg] += (tw_now(lp) - msg->travel_start_time); 
+    s->period_total_time[vcg] += (tw_now(lp) - msg->travel_start_time); 
     total_hops[vcg] += msg->my_N_hop;
     s->total_hops[vcg] += msg->my_N_hop;
     s->fin_hops_sample += msg->my_N_hop;
@@ -4233,11 +4257,17 @@ static void packet_arrive(terminal_state * s, tw_bf * bf, terminal_dally_message
     if(s->min_latency[vcg] > tw_now(lp) - msg->travel_start_time) {
 		s->min_latency[vcg] = tw_now(lp) - msg->travel_start_time;	
 	}
+    if(s->period_min_latency[vcg] > tw_now(lp) - msg->travel_start_time) {
+		s->period_min_latency[vcg] = tw_now(lp) - msg->travel_start_time;	
+	}
 
 	if(s->max_latency[vcg] < tw_now( lp ) - msg->travel_start_time) {
         bf->c22 = 1;
         msg->saved_available_time = s->max_latency[vcg];
         s->max_latency[vcg] = tw_now(lp) - msg->travel_start_time;
+	}
+	if(s->period_max_latency[vcg] < tw_now( lp ) - msg->travel_start_time) {
+        	s->period_max_latency[vcg] = tw_now(lp) - msg->travel_start_time;
 	}
     /* If all chunks of a message have arrived then send a remote event to the
      * callee*/
