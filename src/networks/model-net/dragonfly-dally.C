@@ -2299,7 +2299,7 @@ void issue_bw_monitor_event(terminal_state * s, tw_bf * bf, terminal_dally_messa
         for(int i = 0; i < num_qos_levels; i++)
         {
             // time-stamp %d qos-level %lf avg-chunk-latency %lf max-chunk-latency avg-hops min-routed-chunks nonmin-routed-chunks
-	    if(s->min_latency[i] > 0)
+	    if(s->period_max_latency[i] > 0)
             	fprintf(dragonfly_term_pk_log, "\n %.0f %d %.2lf %.2lf %.2lf", tw_now(lp), i, s->period_total_time[i]/s->period_finished_chunks[i], s->period_min_latency[i], s->period_max_latency[i]);
         }
     }
