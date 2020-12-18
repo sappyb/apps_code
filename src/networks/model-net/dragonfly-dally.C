@@ -2300,7 +2300,7 @@ void issue_bw_monitor_event(terminal_state * s, tw_bf * bf, terminal_dally_messa
         {
             // time-stamp %d qos-level %lf avg-chunk-latency %lf max-chunk-latency avg-hops min-routed-chunks nonmin-routed-chunks
 	    if(s->period_max_latency[i] > 0)
-            	fprintf(dragonfly_term_pk_log, "\n %.0f %d %.2lf %.2lf %.2lf", tw_now(lp), i, s->period_total_time[i]/s->period_finished_chunks[i], s->period_min_latency[i], s->period_max_latency[i]);
+            	fprintf(dragonfly_term_pk_log, "\n %.0f %d %.0lf %.0lf %.0lf", tw_now(lp)/1000.0, i, s->period_total_time[i]/s->period_finished_chunks[i], s->period_min_latency[i], s->period_max_latency[i]);
         }
     }
     #endif   
