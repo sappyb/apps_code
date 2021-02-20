@@ -133,6 +133,7 @@ static double maxd(double a, double b) { return a < b ? b : a; }
 
 /* minimal and non-minimal packet counts for adaptive routing*/
 static long *minimal_count, *nonmin_count;
+static long *g_minimal_count, *g_nonmin_count;
 static long num_routers_per_mgrp = 0;
 
 typedef struct dragonfly_param dragonfly_param;
@@ -2300,7 +2301,7 @@ void issue_bw_monitor_event(terminal_state * s, tw_bf * bf, terminal_dally_messa
         {
             // time-stamp %d qos-level %lf avg-chunk-latency %lf max-chunk-latency avg-hops min-routed-chunks nonmin-routed-chunks
 	    if(s->period_max_latency[i] > 0)
-            	fprintf(dragonfly_term_pk_log, "\n %.0f %d %.0lf %.0lf %.0lf", tw_now(lp)/1000.0, i, s->period_total_time[i]/s->period_finished_chunks[i], s->period_min_latency[i], s->period_max_latency[i]);
+                fprintf(dragonfly_term_pk_log, "\n %.0f %d %d %.0lf %.0lf %.0lf", tw_now(lp)/1000.0, s->terminal_id, i, s->period_total_time[i]/s->period_finished_chunks[i], s->period_min_latency[i], s->period_max_latency[i]);
         }
     }
     #endif   
@@ -2407,7 +2408,7 @@ void issue_rtr_bw_monitor_event(router_state *s, tw_bf *bf, terminal_dally_messa
         {
             // time-stamp %d qos-level %lf avg-chunk-latency %lf max-chunk-latency avg-hops min-routed-chunks nonmin-routed-chunks
             //fprintf(dragonfly_net_pk_log, "\n %.0f %d %lf %lf %f %ld %ld", tw_now(lp), k, (float)dragonfly_total_time[k]/N_finished_chunks[k], dragonfly_max_latency[k], (float)total_hops[k]/N_finished_packets[k], minimal_count[k], nonmin_count[k]);
-            fprintf(dragonfly_net_pk_log, "\n %.0f %d %.2f %ld %ld", tw_now(lp), k, (float)total_hops[k]/N_finished_packets[k], minimal_count[k], nonmin_count[k]);
+            fprintf(dragonfly_net_pk_log, "\n %.0f %d %.2f %ld %ld", tw_now(lp), k, (float)total_hops[k]/N_finished_packets[k], g_minimal_count[k], g_nonmin_count[k]);
         }
     }
     #endif   
@@ -3081,11 +3082,14 @@ void terminal_dally_init( terminal_state * s, tw_lp * lp )
 
         minimal_count = (long*)calloc(num_qos_levels, sizeof(long));
         nonmin_count = (long*)calloc(num_qos_levels, sizeof(long));
+        g_minimal_count = (long*)calloc(num_qos_levels, sizeof(long));
+        g_nonmin_count = (long*)calloc(num_qos_levels, sizeof(long));
 
 #if PRINT_MSG_TIMES == 1
         rdfdally_file = fopen("/tmp/r-dfdally.out", "w");
         fprintf(rdfdally_file, "time destination source qosclass num.hops latency router.queue.time");
 #endif
+	tw_output(lp, "\n PID myprocid-%lu-%ld ",  g_tw_mynode, (long)getpid()); // Record pid at the start of the simulation.
     }
  
     s->packet_gen = (long*)calloc(num_qos_levels, sizeof(long));
@@ -3224,7 +3228,6 @@ void router_dally_init(router_state * r, tw_lp * lp)
     
     char rtr_bw_log[128];
     sprintf(rtr_bw_log, "router-bw-tracker-%lu-%ld", g_tw_mynode, (long)getpid());
-
     if(dragonfly_rtr_bw_log == NULL)
     {
         dragonfly_rtr_bw_log = fopen(rtr_bw_log, "w+");
@@ -3970,10 +3973,17 @@ static void packet_arrive_rc(terminal_state * s, tw_bf * bf, terminal_dally_mess
         packet_fin[vcg]--;
     }
 
-    if(msg->path_type == MINIMAL)
+    if(msg->path_type == MINIMAL){
         minimal_count[vcg]--;
-    if(msg->path_type == NON_MINIMAL)
+        if(msg->my_g_hop > 0)
+            g_minimal_count[vcg]--;
+
+    }
+    if(msg->path_type == NON_MINIMAL){
         nonmin_count[vcg]--;
+        if(msg->my_g_hop > 0)
+            g_nonmin_count[vcg]--;
+    }
 
     N_finished_chunks[vcg]--;
     s->finished_chunks[vcg]--;
@@ -4148,11 +4158,17 @@ static void packet_arrive(terminal_state * s, tw_bf * bf, terminal_dally_message
     if (msg->packet_size < s->params->chunk_size)
         num_chunks++;
 
-    if(msg->path_type == MINIMAL)
+    if(msg->path_type == MINIMAL){
         minimal_count[vcg]++;
+        if(msg->my_g_hop > 0)
+            g_minimal_count[vcg]++;
+    }
 
-    if(msg->path_type == NON_MINIMAL)
+    if(msg->path_type == NON_MINIMAL){
         nonmin_count[vcg]++;
+        if(msg->my_g_hop > 0)
+            g_nonmin_count[vcg]++;
+    }
 
     if(msg->chunk_id == num_chunks - 1)
     {
