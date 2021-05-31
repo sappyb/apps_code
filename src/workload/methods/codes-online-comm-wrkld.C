@@ -24,9 +24,10 @@
 #include "nekbone_swm_user_code.h"
 #include "nearest_neighbor_swm_user_code.h"
 #include "all_to_one_swm_user_code.h"
-#include "spread.h"
-#include "all_reduce.h"
-#include "some_to_some_swm_user_code.h"
+#include "one_to_many_swm_user_code.h"
+#include "many_to_many_swm_user_code.h"
+#include "milc_swm_user_code.h"
+#include "allreduce.h"
 
 #define ALLREDUCE_SHORT_MSG_SIZE 2048
 
@@ -791,7 +792,7 @@ static void workload_caller(void * arg)
         LAMMPS_SWM * lammps_swm = static_cast<LAMMPS_SWM*>(sctx->swm_obj);
         lammps_swm->call();
     }
-    else if(strcmp(sctx->workload_name, "nekbone") == 0 || strcmp(sctx->workload_name, "nekbone1") == 0) 
+    else if(strcmp(sctx->workload_name, "nekbone") == 0 || strcmp(sctx->workload_name, "nekbone1") == 0)
     {
         NEKBONESWMUserCode * nekbone_swm = static_cast<NEKBONESWMUserCode*>(sctx->swm_obj);
         nekbone_swm->call();
@@ -808,18 +809,23 @@ static void workload_caller(void * arg)
     }
     else if(strcmp(sctx->workload_name, "spread") == 0)
     {
-        SpreadSWMUserCode * spread_swm = static_cast< SpreadSWMUserCode*>(sctx->swm_obj);
+        OneToManySWMUserCode * spread_swm = static_cast< OneToManySWMUserCode*>(sctx->swm_obj);
         spread_swm->call();
     }
-    else if(strcmp(sctx->workload_name, "all_reduce") == 0 || strcmp(sctx->workload_name, "all_reduce32") == 0 || strcmp(sctx->workload_name, "all_reduce256") == 0)
+    else if(strcmp(sctx->workload_name, "allreduce") == 0 || strcmp(sctx->workload_name, "allreduce32") == 0 || strcmp(sctx->workload_name, "allreduce256") == 0)
     {
-        AllReduceSWMUserCode * all_reduce_swm = static_cast< AllReduceSWMUserCode*>(sctx->swm_obj);
-        all_reduce_swm->call();
+        AllReduceSWMUserCode * allreduce_swm = static_cast< AllReduceSWMUserCode*>(sctx->swm_obj);
+        allreduce_swm->call();
     }
-    else if(strcmp(sctx->workload_name, "bulk_data") == 0 || strcmp(sctx->workload_name, "bulk_data1") == 0)
+    else if(strcmp(sctx->workload_name, "many_to_many") == 0 || strcmp(sctx->workload_name, "many_to_many1") == 0)
     {
-        SomeToSomeSWMUserCode * bulk_data_swm = static_cast< SomeToSomeSWMUserCode*>(sctx->swm_obj);
-        bulk_data_swm->call();
+        ManyToManySWMUserCode * many_to_many_swm = static_cast< ManyToManySWMUserCode*>(sctx->swm_obj);
+        many_to_many_swm->call();
+    }
+    else if(strcmp(sctx->workload_name, "milc") == 0)
+    {
+        MilcSWMUserCode * milc_swm = static_cast< MilcSWMUserCode*>(sctx->swm_obj);
+        milc_swm->call();
     }
 }
 static int comm_online_workload_load(const char * params, int app_id, int rank)
@@ -856,11 +862,11 @@ static int comm_online_workload_load(const char * params, int app_id, int rank)
     }
     else if(strcmp(o_params->workload_name, "nekbone") == 0)
     {
-        path.append("/workload.json"); 
+        path.append("/workload.json");
     }
     else if(strcmp(o_params->workload_name, "nekbone1") == 0)
     {
-        path.append("/workload1.json"); 
+        path.append("/workload1.json");
     }
     else if(strcmp(o_params->workload_name, "nearest_neighbor") == 0)
     {
@@ -882,25 +888,29 @@ static int comm_online_workload_load(const char * params, int app_id, int rank)
     {
         path.append("/spread_workload.json");
     }
-    else if(strcmp(o_params->workload_name, "all_reduce") == 0)
+    else if(strcmp(o_params->workload_name, "allreduce") == 0)
     {
-        path.append("/all_reduce_workload.json");
+        path.append("/allreduce_workload.json");
     }
-    else if(strcmp(o_params->workload_name, "all_reduce32") == 0)
+    else if(strcmp(o_params->workload_name, "allreduce32") == 0)
     {
-        path.append("/all_reduce32_workload.json");
+        path.append("/allreduce32_workload.json");
     }
-    else if(strcmp(o_params->workload_name, "all_reduce256") == 0)
+    else if(strcmp(o_params->workload_name, "allreduce256") == 0)
     {
-        path.append("/all_reduce256_workload.json");
+        path.append("/allreduce256_workload.json");
     }
-    else if(strcmp(o_params->workload_name, "bulk_data") == 0)
+    else if(strcmp(o_params->workload_name, "many_to_many") == 0)
     {
-        path.append("/bulk_data_workload.json");
+        path.append("/many_to_many_workload.json");
     }
-    else if(strcmp(o_params->workload_name, "bulk_data1") == 0)
+    else if(strcmp(o_params->workload_name, "many_to_many1") == 0)
     {
-        path.append("/bulk_data_workload1.json");
+        path.append("/many_to_many_workload1.json");
+    }
+    else if(strcmp(o_params->workload_name, "milc") == 0)
+    {
+        path.append("/milc_skeleton.json");
     }
     else
         tw_error(TW_LOC, "\n Undefined workload type %s ", o_params->workload_name);
@@ -938,18 +948,23 @@ static int comm_online_workload_load(const char * params, int app_id, int rank)
     }
     else if(strcmp(o_params->workload_name, "spread") == 0)
     {
-        SpreadSWMUserCode * spread_swm = new SpreadSWMUserCode(root, generic_ptrs);
+        OneToManySWMUserCode * spread_swm = new OneToManySWMUserCode(root, generic_ptrs);
         my_ctx->sctx.swm_obj = (void*)spread_swm;
     }
-    else if(strcmp(o_params->workload_name, "all_reduce") == 0 || strcmp(o_params->workload_name, "all_reduce32") == 0 || strcmp(o_params->workload_name, "all_reduce256") == 0)
+    else if(strcmp(o_params->workload_name, "allreduce") == 0 || strcmp(o_params->workload_name, "allreduce32") == 0 || strcmp(o_params->workload_name, "allreduce256") == 0)
     {
-        AllReduceSWMUserCode * all_reduce_swm = new AllReduceSWMUserCode(root, generic_ptrs);
-        my_ctx->sctx.swm_obj = (void*)all_reduce_swm;
+        AllReduceSWMUserCode * allreduce_swm = new AllReduceSWMUserCode(root, generic_ptrs);
+        my_ctx->sctx.swm_obj = (void*)allreduce_swm;
     }
-    else if(strcmp(o_params->workload_name, "bulk_data") == 0 || strcmp(o_params->workload_name, "bulk_data1") == 0)
+    else if(strcmp(o_params->workload_name, "many_to_many") == 0 || strcmp(o_params->workload_name, "many_to_many1") == 0)
     {
-        SomeToSomeSWMUserCode * bulk_data_swm = new SomeToSomeSWMUserCode(root, generic_ptrs);
-        my_ctx->sctx.swm_obj = (void*)bulk_data_swm;
+        ManyToManySWMUserCode * many_to_many_swm = new ManyToManySWMUserCode(root, generic_ptrs);
+        my_ctx->sctx.swm_obj = (void*)many_to_many_swm;
+    }
+    else if(strcmp(o_params->workload_name, "milc") == 0)
+    {
+        MilcSWMUserCode * milc_swm = new MilcSWMUserCode(root, generic_ptrs);
+        my_ctx->sctx.swm_obj = (void*)milc_swm;
     }
 
     if(global_prod_thread == NULL)
