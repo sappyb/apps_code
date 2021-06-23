@@ -45,8 +45,8 @@
 #define DEBUG_LP 892
 #define DEBUG_QOS 1
 #define DEBUG_QOS_X 0
-#define DEBUG_QOS_R 1
-#define DEBUG_QOS_T 1
+#define DEBUG_QOS_R 0
+#define DEBUG_QOS_T 0
 #define PRINT_MSG_TIMES 0
 #define T_ID -1
 #define TRACK -1
@@ -2382,13 +2382,13 @@ void issue_rtr_bw_monitor_event(router_state *s, tw_bf *bf, terminal_dally_messa
     //RC data storage end.
 
 
+    #if DEBUG_QOS == 1 
     for(int i = 0; i < radix; i++)
     {
         for(int j = 0; j < num_qos_levels; j++)
         {
             double bw_consumed = get_rtr_bandwidth_consumption(s, j, i);
         
-            #if DEBUG_QOS == 1 
             if(dragonfly_rtr_bw_log != NULL)
             {
                 if(s->qos_green_total[i][j] > 0 || s->qos_yellow_total[i][j] > 0 || s->qos_red_total[i][j] > 0 || s->qos_data[i][j] > 0)
@@ -2396,9 +2396,9 @@ void issue_rtr_bw_monitor_event(router_state *s, tw_bf *bf, terminal_dally_messa
                     fprintf(dragonfly_rtr_bw_log, "\n %d %f %d %d %f %d %d %f %d %d %d %d %d %d", s->router_id, tw_now(lp), i, j, bw_consumed, s->qos_status[i][j], s->qos_data[i][j], s->busy_time_sample[i], s->qos_green_total[i][j], s->qos_green_sent[i][j], s->qos_yellow_total[i][j], s->qos_yellow_sent[i][j], s->qos_red_total[i][j], s->qos_red_sent[i][j]);
                 }
             }
-            #endif   
         }
     }
+    #endif   
 
     #if DEBUG_QOS_R == 1 
     // Print cumulatative network stats
@@ -3226,6 +3226,7 @@ void router_dally_init(router_state * r, tw_lp * lp)
     r->router_id = codes_mapping_get_lp_relative_id(lp->gid, 0, 0);
     r->group_id=r->router_id/p->num_routers;
     
+    #if DEBUG_QOS == 1
     char rtr_bw_log[128];
     sprintf(rtr_bw_log, "router-bw-tracker-%lu-%ld", g_tw_mynode, (long)getpid());
     if(dragonfly_rtr_bw_log == NULL)
@@ -3234,7 +3235,9 @@ void router_dally_init(router_state * r, tw_lp * lp)
 
         fprintf(dragonfly_rtr_bw_log, "\n router-id time-stamp port-id qos-level bw-consumed qos-status qos-data busy-time qos-green-total qos-green-sent qos-yellow-total qos-yellow-sent qos-red-total qos-red-sent");
     }
+    #endif   
 
+    #if DEBUG_QOS_R == 1
     char net_pk_log[128];
     sprintf(net_pk_log, "network-packet-stats-%lu-%ld", g_tw_mynode, (long)getpid());
     if(dragonfly_net_pk_log == NULL)
@@ -3244,6 +3247,8 @@ void router_dally_init(router_state * r, tw_lp * lp)
         fprintf(dragonfly_net_pk_log, "\n time-stamp qos-level avg-hops min-routed-chunks nonmin-routed-chunks");
         //fprintf(dragonfly_net_pk_log, "\n time-stamp qos-level avg-chunk-latency max-chunk-latency avg-hops min-routed-chunks nonmin-routed-chunks");
     }
+    #endif
+    #if DEBUG_QOS_T == 1
     char term_pk_log[128];
     sprintf(term_pk_log, "terminal-packet-stats-%lu-%ld", g_tw_mynode, (long)getpid());
     if(dragonfly_term_pk_log == NULL)
@@ -3251,6 +3256,7 @@ void router_dally_init(router_state * r, tw_lp * lp)
         dragonfly_term_pk_log = fopen(term_pk_log, "w+");
         fprintf(dragonfly_term_pk_log, "\n time-stamp term-id qos-level pk-avg pk-min pk-max");
     }
+    #endif
 
    //printf("\n Local router id %d global id %d ", r->router_id, lp->gid);
 
@@ -4459,7 +4465,9 @@ void dragonfly_dally_router_final(router_state * s, tw_lp * lp)
 
     if(s->router_id == 0)
     {
+        #if DEBUG_QOS == 1 
         fclose(dragonfly_rtr_bw_log);
+        #endif
         //fclose(dragonfly_net_pk_log);
     }
 
