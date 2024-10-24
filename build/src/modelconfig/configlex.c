@@ -1,6 +1,6 @@
-#line 2 "../src/iokernellang/codeslexer.c"
+#line 2 "src/modelconfig/configlex.c"
 
-#line 4 "../src/iokernellang/codeslexer.c"
+#line 4 "src/modelconfig/configlex.c"
 
 #define  YY_INT_ALIGNED short int
 
@@ -153,7 +153,7 @@ typedef void* yyscan_t;
 #define YY_STATE_EOF(state) (YY_END_OF_BUFFER + state + 1)
 
 /* Special action meaning "start processing a new file". */
-#define YY_NEW_FILE CodesIOKernel_restart(yyin ,yyscanner )
+#define YY_NEW_FILE cfgp_restart(yyin ,yyscanner )
 
 #define YY_END_OF_BUFFER_CHAR 0
 
@@ -180,20 +180,7 @@ typedef size_t yy_size_t;
 #define EOB_ACT_END_OF_FILE 1
 #define EOB_ACT_LAST_MATCH 2
 
-    /* Note: We specifically omit the test for yy_rule_can_match_eol because it requires
-     *       access to the local variable yy_act. Since yyless() is a macro, it would break
-     *       existing scanners that call yyless() from OUTSIDE CodesIOKernel_lex. 
-     *       One obvious solution it to make yy_act a global. I tried that, and saw
-     *       a 5% performance hit in a non-yylineno scanner, because yy_act is
-     *       normally declared as a register variable-- so it is not worth it.
-     */
-    #define  YY_LESS_LINENO(n) \
-            do { \
-                int yyl;\
-                for ( yyl = n; yyl < yyleng; ++yyl )\
-                    if ( yytext[yyl] == '\n' )\
-                        --yylineno;\
-            }while(0)
+    #define YY_LESS_LINENO(n)
     
 /* Return all but the first "n" matched characters back to the input stream. */
 #define yyless(n) \
@@ -268,7 +255,7 @@ struct yy_buffer_state
 	 * possible backing-up.
 	 *
 	 * When we actually see the EOF, we change the status to "new"
-	 * (via CodesIOKernel_restart()), so that the user can continue scanning by
+	 * (via cfgp_restart()), so that the user can continue scanning by
 	 * just pointing yyin at a new input file.
 	 */
 #define YY_BUFFER_EOF_PENDING 2
@@ -291,36 +278,36 @@ struct yy_buffer_state
  */
 #define YY_CURRENT_BUFFER_LVALUE yyg->yy_buffer_stack[yyg->yy_buffer_stack_top]
 
-void CodesIOKernel_restart (FILE *input_file ,yyscan_t yyscanner );
-void CodesIOKernel__switch_to_buffer (YY_BUFFER_STATE new_buffer ,yyscan_t yyscanner );
-YY_BUFFER_STATE CodesIOKernel__create_buffer (FILE *file,int size ,yyscan_t yyscanner );
-void CodesIOKernel__delete_buffer (YY_BUFFER_STATE b ,yyscan_t yyscanner );
-void CodesIOKernel__flush_buffer (YY_BUFFER_STATE b ,yyscan_t yyscanner );
-void CodesIOKernel_push_buffer_state (YY_BUFFER_STATE new_buffer ,yyscan_t yyscanner );
-void CodesIOKernel_pop_buffer_state (yyscan_t yyscanner );
+void cfgp_restart (FILE *input_file ,yyscan_t yyscanner );
+void cfgp__switch_to_buffer (YY_BUFFER_STATE new_buffer ,yyscan_t yyscanner );
+YY_BUFFER_STATE cfgp__create_buffer (FILE *file,int size ,yyscan_t yyscanner );
+void cfgp__delete_buffer (YY_BUFFER_STATE b ,yyscan_t yyscanner );
+void cfgp__flush_buffer (YY_BUFFER_STATE b ,yyscan_t yyscanner );
+void cfgp_push_buffer_state (YY_BUFFER_STATE new_buffer ,yyscan_t yyscanner );
+void cfgp_pop_buffer_state (yyscan_t yyscanner );
 
-static void CodesIOKernel_ensure_buffer_stack (yyscan_t yyscanner );
-static void CodesIOKernel__load_buffer_state (yyscan_t yyscanner );
-static void CodesIOKernel__init_buffer (YY_BUFFER_STATE b,FILE *file ,yyscan_t yyscanner );
+static void cfgp_ensure_buffer_stack (yyscan_t yyscanner );
+static void cfgp__load_buffer_state (yyscan_t yyscanner );
+static void cfgp__init_buffer (YY_BUFFER_STATE b,FILE *file ,yyscan_t yyscanner );
 
-#define YY_FLUSH_BUFFER CodesIOKernel__flush_buffer(YY_CURRENT_BUFFER ,yyscanner)
+#define YY_FLUSH_BUFFER cfgp__flush_buffer(YY_CURRENT_BUFFER ,yyscanner)
 
-YY_BUFFER_STATE CodesIOKernel__scan_buffer (char *base,yy_size_t size ,yyscan_t yyscanner );
-YY_BUFFER_STATE CodesIOKernel__scan_string (yyconst char *yy_str ,yyscan_t yyscanner );
-YY_BUFFER_STATE CodesIOKernel__scan_bytes (yyconst char *bytes,yy_size_t len ,yyscan_t yyscanner );
+YY_BUFFER_STATE cfgp__scan_buffer (char *base,yy_size_t size ,yyscan_t yyscanner );
+YY_BUFFER_STATE cfgp__scan_string (yyconst char *yy_str ,yyscan_t yyscanner );
+YY_BUFFER_STATE cfgp__scan_bytes (yyconst char *bytes,yy_size_t len ,yyscan_t yyscanner );
 
-void *CodesIOKernel_alloc (yy_size_t ,yyscan_t yyscanner );
-void *CodesIOKernel_realloc (void *,yy_size_t ,yyscan_t yyscanner );
-void CodesIOKernel_free (void * ,yyscan_t yyscanner );
+void *cfgp_alloc (yy_size_t ,yyscan_t yyscanner );
+void *cfgp_realloc (void *,yy_size_t ,yyscan_t yyscanner );
+void cfgp_free (void * ,yyscan_t yyscanner );
 
-#define yy_new_buffer CodesIOKernel__create_buffer
+#define yy_new_buffer cfgp__create_buffer
 
 #define yy_set_interactive(is_interactive) \
 	{ \
 	if ( ! YY_CURRENT_BUFFER ){ \
-        CodesIOKernel_ensure_buffer_stack (yyscanner); \
+        cfgp_ensure_buffer_stack (yyscanner); \
 		YY_CURRENT_BUFFER_LVALUE =    \
-            CodesIOKernel__create_buffer(yyin,YY_BUF_SIZE ,yyscanner); \
+            cfgp__create_buffer(yyin,YY_BUF_SIZE ,yyscanner); \
 	} \
 	YY_CURRENT_BUFFER_LVALUE->yy_is_interactive = is_interactive; \
 	}
@@ -328,9 +315,9 @@ void CodesIOKernel_free (void * ,yyscan_t yyscanner );
 #define yy_set_bol(at_bol) \
 	{ \
 	if ( ! YY_CURRENT_BUFFER ){\
-        CodesIOKernel_ensure_buffer_stack (yyscanner); \
+        cfgp_ensure_buffer_stack (yyscanner); \
 		YY_CURRENT_BUFFER_LVALUE =    \
-            CodesIOKernel__create_buffer(yyin,YY_BUF_SIZE ,yyscanner); \
+            cfgp__create_buffer(yyin,YY_BUF_SIZE ,yyscanner); \
 	} \
 	YY_CURRENT_BUFFER_LVALUE->yy_at_bol = at_bol; \
 	}
@@ -339,7 +326,7 @@ void CodesIOKernel_free (void * ,yyscan_t yyscanner );
 
 /* Begin user sect3 */
 
-#define CodesIOKernel_wrap(yyscanner) 1
+#define cfgp_wrap(yyscanner) 1
 #define YY_SKIP_YYWRAP
 
 typedef unsigned char YY_CHAR;
@@ -363,8 +350,8 @@ static void yy_fatal_error (yyconst char msg[] ,yyscan_t yyscanner );
 	*yy_cp = '\0'; \
 	yyg->yy_c_buf_p = yy_cp;
 
-#define YY_NUM_RULES 36
-#define YY_END_OF_BUFFER 37
+#define YY_NUM_RULES 34
+#define YY_END_OF_BUFFER 35
 /* This struct is not used in this scanner,
    but its presence is necessary. */
 struct yy_trans_info
@@ -372,23 +359,14 @@ struct yy_trans_info
 	flex_int32_t yy_verify;
 	flex_int32_t yy_nxt;
 	};
-static yyconst flex_int16_t yy_accept[134] =
+static yyconst flex_int16_t yy_accept[56] =
     {   0,
-        0,    0,   37,   35,   34,   34,   35,    4,    2,    3,
-        4,    4,    4,    1,    1,    1,    1,    1,    1,    1,
-        1,    1,    1,    1,    1,   34,    8,    3,    6,    7,
-        5,    0,    0,    0,    0,    0,    0,   10,    0,    0,
-        0,    0,    0,    0,    0,    0,    0,    0,    0,    0,
-        0,    0,    0,    0,    0,    0,    0,    0,    0,    0,
-        0,    0,   11,   33,    0,    0,    0,    0,   24,    0,
-       17,   27,    0,   21,    0,    0,   25,    0,   26,    0,
-        0,    0,   12,    0,    0,   23,    9,   13,   22,    0,
-        0,    0,    0,   18,    0,    0,    0,    0,    0,    0,
-
-        0,    0,   14,    0,    0,    0,   19,    0,    0,    0,
-        0,    0,    0,    0,    0,    0,   15,    0,   32,   28,
-        0,    0,    0,   20,    0,    0,    0,    0,   16,   30,
-       31,   29,    0
+        0,    0,    0,    0,    0,    0,    0,    0,   35,   33,
+       31,   32,    9,    6,   30,   29,   28,   33,   26,   27,
+       23,   24,   25,    8,    7,   21,   11,   10,   22,    4,
+        3,    4,   31,    1,    5,   23,    0,    8,   21,   20,
+       19,   12,   13,   17,   18,   14,   16,   15,    4,    2,
+       23,   12,   13,   12,    0
     } ;
 
 static yyconst flex_int32_t yy_ec[256] =
@@ -396,17 +374,17 @@ static yyconst flex_int32_t yy_ec[256] =
         1,    1,    1,    1,    1,    1,    1,    1,    2,    3,
         1,    1,    1,    1,    1,    1,    1,    1,    1,    1,
         1,    1,    1,    1,    1,    1,    1,    1,    1,    1,
-        1,    2,    4,    1,    1,    1,    5,    1,    1,    5,
-        5,    5,    5,    5,    5,    5,    5,    6,    7,    7,
-        7,    7,    7,    7,    7,    7,    7,    1,    5,    8,
-        9,   10,    1,    1,    1,    1,    1,    1,    1,    1,
-        1,    1,    1,    1,    1,    1,    1,    1,    1,    1,
-        1,    1,    1,    1,    1,    1,    1,    1,    1,    1,
-        1,    1,    1,    1,   11,    1,   12,   13,   14,   15,
+        1,    2,    1,    4,    5,    1,    1,    1,    1,    6,
+        7,    8,    1,    9,   10,    1,   11,   12,   12,   12,
+       12,   12,   12,   12,   12,   13,   13,    1,   14,    1,
+       15,    1,    1,   16,   17,   17,   17,   17,   17,   17,
+       17,   17,   17,   17,   17,   17,   17,   17,   17,   17,
+       17,   17,   17,   17,   17,   17,   17,   17,   17,   17,
+        1,   18,    1,    1,   10,    1,   17,   19,   17,   17,
 
-       16,   17,   18,   19,   20,   13,   21,   22,   23,   24,
-       25,   26,   13,   27,   28,   29,   30,   13,   31,   32,
-       33,   34,    5,    1,    5,    1,    1,    1,    1,    1,
+       17,   20,   17,   17,   17,   17,   17,   17,   17,   21,
+       17,   17,   17,   22,   17,   23,   17,   17,   17,   17,
+       17,   17,   24,    1,   25,    1,    1,    1,    1,    1,
         1,    1,    1,    1,    1,    1,    1,    1,    1,    1,
         1,    1,    1,    1,    1,    1,    1,    1,    1,    1,
         1,    1,    1,    1,    1,    1,    1,    1,    1,    1,
@@ -423,105 +401,70 @@ static yyconst flex_int32_t yy_ec[256] =
         1,    1,    1,    1,    1
     } ;
 
-static yyconst flex_int32_t yy_meta[35] =
+static yyconst flex_int32_t yy_meta[26] =
     {   0,
-        1,    1,    1,    1,    1,    1,    1,    1,    1,    1,
-        1,    1,    1,    1,    1,    1,    1,    1,    1,    1,
-        1,    1,    1,    1,    1,    1,    1,    1,    1,    1,
-        1,    1,    1,    1
+        1,    1,    2,    3,    1,    1,    1,    1,    1,    4,
+        1,    4,    4,    1,    1,    5,    4,    3,    4,    4,
+        4,    4,    4,    1,    1
     } ;
 
-static yyconst flex_int16_t yy_base[134] =
+static yyconst flex_int16_t yy_base[65] =
     {   0,
-        0,    0,  150,  151,   33,   35,  140,  151,  151,   33,
-      139,  138,  137,  151,  123,  128,   19,  121,  126,  124,
-      114,  112,  122,   26,   25,   43,  151,   43,  151,  151,
-      151,  112,  114,  107,  114,  103,  103,  151,  115,  110,
-      117,  112,  111,  102,  105,  104,   95,  106,  105,   91,
-       91,   29,   94,   93,  101,   94,   98,   99,   90,   82,
-       94,   80,  151,  151,   89,   77,   79,   75,  151,   75,
-       43,  151,   77,  151,   86,   85,  151,   84,  151,   72,
-       73,   74,  151,   84,   66,  151,  151,   45,  151,   65,
-       63,   74,   69,   79,   77,   59,   67,   60,   58,   62,
-
-       71,   60,   70,   57,   38,   54,  151,   56,   55,   64,
-       59,   59,   61,   52,   41,   48,  151,   47,  151,  151,
-       44,   33,   38,  151,   41,   41,   45,   32,  151,  151,
-      151,  151,  151
+        0,    0,   56,   55,   23,   25,   27,   28,   57,  102,
+       54,  102,  102,  102,  102,  102,  102,   26,  102,  102,
+       39,  102,  102,    0,  102,    0,  102,  102,   41,    0,
+      102,   41,   49,  102,  102,   26,    0,    0,    0,  102,
+      102,   20,   26,  102,  102,  102,  102,  102,    0,    0,
+        0,   33,   35,   37,  102,   64,   69,   74,   76,   81,
+       86,   91,   96,   36
     } ;
 
-static yyconst flex_int16_t yy_def[134] =
+static yyconst flex_int16_t yy_def[65] =
     {   0,
-      133,    1,  133,  133,  133,  133,  133,  133,  133,  133,
-      133,  133,  133,  133,  133,  133,  133,  133,  133,  133,
-      133,  133,  133,  133,  133,  133,  133,  133,  133,  133,
-      133,  133,  133,  133,  133,  133,  133,  133,  133,  133,
-      133,  133,  133,  133,  133,  133,  133,  133,  133,  133,
-      133,  133,  133,  133,  133,  133,  133,  133,  133,  133,
-      133,  133,  133,  133,  133,  133,  133,  133,  133,  133,
-      133,  133,  133,  133,  133,  133,  133,  133,  133,  133,
-      133,  133,  133,  133,  133,  133,  133,  133,  133,  133,
-      133,  133,  133,  133,  133,  133,  133,  133,  133,  133,
-
-      133,  133,  133,  133,  133,  133,  133,  133,  133,  133,
-      133,  133,  133,  133,  133,  133,  133,  133,  133,  133,
-      133,  133,  133,  133,  133,  133,  133,  133,  133,  133,
-      133,  133,    0
+       55,    1,   56,   56,   57,   57,   58,   58,   55,   55,
+       55,   55,   55,   55,   55,   55,   55,   55,   55,   55,
+       59,   55,   55,   60,   55,   61,   55,   55,   62,   63,
+       55,   63,   55,   55,   55,   59,   64,   60,   61,   55,
+       55,   55,   55,   55,   55,   55,   55,   55,   63,   63,
+       64,   55,   55,   55,    0,   55,   55,   55,   55,   55,
+       55,   55,   55,   55
     } ;
 
-static yyconst flex_int16_t yy_nxt[186] =
+static yyconst flex_int16_t yy_nxt[128] =
     {   0,
-        4,    5,    6,    7,    8,    9,   10,   11,   12,   13,
-        4,   14,   14,   15,   16,   17,   18,   19,   14,   20,
-       14,   14,   14,   14,   21,   22,   23,   24,   14,   14,
-       25,   14,   14,   14,   26,   26,   26,   26,   28,   28,
-       34,   42,   66,   45,   26,   26,   67,   43,   28,   28,
-       35,   46,   68,   84,   85,   95,   96,  112,   44,  132,
-      131,  130,  129,  128,  113,  114,  127,  126,  125,  124,
-      123,  122,  121,  120,  119,  118,  117,  116,  115,  111,
-      110,  109,  108,  107,  106,  105,  104,  103,  102,  101,
-      100,   99,   98,   97,   94,   93,   92,   91,   90,   89,
+       10,   11,   12,   13,   14,   15,   16,   10,   17,   10,
+       18,   10,   10,   19,   20,   10,   21,   10,   21,   21,
+       21,   21,   21,   22,   23,   27,   28,   27,   28,   31,
+       31,   52,   53,   34,   32,   32,   35,   53,   53,   51,
+       29,   37,   29,   41,   54,   53,   53,   53,   53,   53,
+       33,   50,   42,   43,   37,   33,   55,   25,   25,   44,
+       45,   46,   47,   48,   24,   24,   24,   24,   24,   26,
+       26,   26,   26,   26,   30,   30,   30,   30,   30,   36,
+       36,   38,   55,   38,   38,   38,   39,   55,   55,   39,
+       39,   40,   40,   40,   40,   40,   49,   55,   49,   49,
 
-       88,   87,   86,   83,   82,   81,   80,   79,   78,   77,
-       76,   75,   74,   73,   72,   71,   70,   69,   65,   64,
-       63,   62,   61,   60,   59,   58,   57,   56,   55,   54,
-       53,   52,   51,   50,   49,   48,   47,   41,   40,   39,
-       38,   37,   36,   33,   32,   31,   30,   29,   27,  133,
-        3,  133,  133,  133,  133,  133,  133,  133,  133,  133,
-      133,  133,  133,  133,  133,  133,  133,  133,  133,  133,
-      133,  133,  133,  133,  133,  133,  133,  133,  133,  133,
-      133,  133,  133,  133,  133
+       49,    9,   55,   55,   55,   55,   55,   55,   55,   55,
+       55,   55,   55,   55,   55,   55,   55,   55,   55,   55,
+       55,   55,   55,   55,   55,   55,   55
     } ;
 
-static yyconst flex_int16_t yy_chk[186] =
+static yyconst flex_int16_t yy_chk[128] =
     {   0,
         1,    1,    1,    1,    1,    1,    1,    1,    1,    1,
         1,    1,    1,    1,    1,    1,    1,    1,    1,    1,
-        1,    1,    1,    1,    1,    1,    1,    1,    1,    1,
-        1,    1,    1,    1,    5,    5,    6,    6,   10,   10,
-       17,   24,   52,   25,   26,   26,   52,   24,   28,   28,
-       17,   25,   52,   71,   71,   88,   88,  105,   24,  128,
-      127,  126,  125,  123,  105,  105,  122,  121,  118,  116,
-      115,  114,  113,  112,  111,  110,  109,  108,  106,  104,
-      103,  102,  101,  100,   99,   98,   97,   96,   95,   94,
-       93,   92,   91,   90,   85,   84,   82,   81,   80,   78,
+        1,    1,    1,    1,    1,    5,    5,    6,    6,    7,
+        8,   42,   42,   18,    7,    8,   18,   43,   43,   64,
+        5,   36,    6,   29,   52,   52,   53,   53,   54,   54,
+       33,   32,   29,   29,   21,   11,    9,    4,    3,   29,
+       29,   29,   29,   29,   56,   56,   56,   56,   56,   57,
+       57,   57,   57,   57,   58,   58,   58,   58,   58,   59,
+       59,   60,    0,   60,   60,   60,   61,    0,    0,   61,
+       61,   62,   62,   62,   62,   62,   63,    0,   63,   63,
 
-       76,   75,   73,   70,   68,   67,   66,   65,   62,   61,
-       60,   59,   58,   57,   56,   55,   54,   53,   51,   50,
-       49,   48,   47,   46,   45,   44,   43,   42,   41,   40,
-       39,   37,   36,   35,   34,   33,   32,   23,   22,   21,
-       20,   19,   18,   16,   15,   13,   12,   11,    7,    3,
-      133,  133,  133,  133,  133,  133,  133,  133,  133,  133,
-      133,  133,  133,  133,  133,  133,  133,  133,  133,  133,
-      133,  133,  133,  133,  133,  133,  133,  133,  133,  133,
-      133,  133,  133,  133,  133
+       63,   55,   55,   55,   55,   55,   55,   55,   55,   55,
+       55,   55,   55,   55,   55,   55,   55,   55,   55,   55,
+       55,   55,   55,   55,   55,   55,   55
     } ;
-
-/* Table of booleans, true if rule could match eol. */
-static yyconst flex_int32_t yy_rule_can_match_eol[37] =
-    {   0,
-0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0,     };
 
 /* The intent behind this definition is that it'll catch
  * any uses of REJECT which flex missed.
@@ -530,39 +473,48 @@ static yyconst flex_int32_t yy_rule_can_match_eol[37] =
 #define yymore() yymore_used_but_not_detected
 #define YY_MORE_ADJ 0
 #define YY_RESTORE_YY_MORE_OFFSET
-#line 1 "../src/iokernellang/codeslexer.l"
-/*
- * Copyright (C) 2013 University of Chicago.
- * See COPYRIGHT notice in top-level directory.
- *
- */
-#line 8 "../src/iokernellang/codeslexer.l"
-#include <stdlib.h>
-#include "src/iokernellang/CodesIOKernelTypes.h"
-#include "src/iokernellang/CodesIOKernelParser.h"
+#line 1 "../src/modelconfig/configlex.l"
+#line 2 "../src/modelconfig/configlex.l"
 
-#define YY_NO_INPUT
+#include <string.h>
+#include "src/modelconfig/configglue.h"
+#include "src/modelconfig/configparser.h"
 
-#line 25 "../src/iokernellang/codeslexer.l"
-	YYLTYPE *CodesIOKernel_get_lloc  (yyscan_t yyscanner);
-	int CodesIOKernel_lex_init (yyscan_t* scanner);
-	int CodesIOKernel_lex(YYSTYPE * lvalp, YYLTYPE * llocp, void * scanner);
-	YY_BUFFER_STATE CodesIOKernel__scan_string (yyconst char *yy_str ,yyscan_t yyscanner);
+#define YY_EXTRA_TYPE ParserParams * 
 
-	#define YY_EXTRA_TYPE CodesIOKernelContext*
-#if 0
-	#define YY_USER_ACTION \
-        do { \
-                yylloc->first_line = yylloc->last_line = 1; \
-                yylloc->first_column = yylloc->last_column = 0; \
-        } while(0) ;
-#else
-        #define YY_USER_ACTION /* no user action */;
+/* Disable warnings in the flex generated code */
+#if defined __GNUC__
+#pragma GCC diagnostic ignored "-Wunused-parameter"
+#pragma GCC diagnostic ignored "-Wunused-function"
+#pragma GCC diagnostic ignored "-Wsign-compare"
+#elif defined __SUNPRO_CC
+#pragma disable_warn
+#elif defined _MSC_VER
+#pragma warning(push, 1)
 #endif
 
-#line 564 "../src/iokernellang/codeslexer.c"
+#define CFGP_CHECKOVERFLOW 
+
+#define LOC_COL_ADV(a) yylloc->last_column+=(a)
+#define LOC_COL_DEF_ADV yylloc->last_column+=strlen(yytext)
+#define LOC_COL_RESET  yylloc->last_column=1
+#define LOC_LINE_ADV(a) yylloc->last_line+=(a),yylloc->last_column=1
+#define LOC_RESET_FIRST yylloc->first_line=yylloc->first_column=0
+#define LOC_INIT_FIRST yylloc->first_line=yylloc->last_line,\
+                        yylloc->first_column=yylloc->last_column
+
+#define LOC_INIT_LAST yylloc->last_line=1,yylloc->last_column=1
+
+#define YY_USER_INIT LOC_INIT_LAST,LOC_INIT_FIRST; \
+           yyextra->lexer_error_code=0; yyextra->lexer_error_string=0;
+
+
+#line 513 "src/modelconfig/configlex.c"
 
 #define INITIAL 0
+#define COMMENT 1
+#define STRING_LITERAL 2
+#define COMMENT2 3
 
 #ifndef YY_NO_UNISTD_H
 /* Special case for "unistd.h", since it is non-ANSI. We include it way
@@ -622,50 +574,50 @@ static int yy_init_globals (yyscan_t yyscanner );
     
     #    define yylloc yyg->yylloc_r
     
-int CodesIOKernel_lex_init (yyscan_t* scanner);
+int cfgp_lex_init (yyscan_t* scanner);
 
-int CodesIOKernel_lex_init_extra (YY_EXTRA_TYPE user_defined,yyscan_t* scanner);
+int cfgp_lex_init_extra (YY_EXTRA_TYPE user_defined,yyscan_t* scanner);
 
 /* Accessor methods to globals.
    These are made visible to non-reentrant scanners for convenience. */
 
-int CodesIOKernel_lex_destroy (yyscan_t yyscanner );
+int cfgp_lex_destroy (yyscan_t yyscanner );
 
-int CodesIOKernel_get_debug (yyscan_t yyscanner );
+int cfgp_get_debug (yyscan_t yyscanner );
 
-void CodesIOKernel_set_debug (int debug_flag ,yyscan_t yyscanner );
+void cfgp_set_debug (int debug_flag ,yyscan_t yyscanner );
 
-YY_EXTRA_TYPE CodesIOKernel_get_extra (yyscan_t yyscanner );
+YY_EXTRA_TYPE cfgp_get_extra (yyscan_t yyscanner );
 
-void CodesIOKernel_set_extra (YY_EXTRA_TYPE user_defined ,yyscan_t yyscanner );
+void cfgp_set_extra (YY_EXTRA_TYPE user_defined ,yyscan_t yyscanner );
 
-FILE *CodesIOKernel_get_in (yyscan_t yyscanner );
+FILE *cfgp_get_in (yyscan_t yyscanner );
 
-void CodesIOKernel_set_in  (FILE * in_str ,yyscan_t yyscanner );
+void cfgp_set_in  (FILE * in_str ,yyscan_t yyscanner );
 
-FILE *CodesIOKernel_get_out (yyscan_t yyscanner );
+FILE *cfgp_get_out (yyscan_t yyscanner );
 
-void CodesIOKernel_set_out  (FILE * out_str ,yyscan_t yyscanner );
+void cfgp_set_out  (FILE * out_str ,yyscan_t yyscanner );
 
-yy_size_t CodesIOKernel_get_leng (yyscan_t yyscanner );
+yy_size_t cfgp_get_leng (yyscan_t yyscanner );
 
-char *CodesIOKernel_get_text (yyscan_t yyscanner );
+char *cfgp_get_text (yyscan_t yyscanner );
 
-int CodesIOKernel_get_lineno (yyscan_t yyscanner );
+int cfgp_get_lineno (yyscan_t yyscanner );
 
-void CodesIOKernel_set_lineno (int line_number ,yyscan_t yyscanner );
+void cfgp_set_lineno (int line_number ,yyscan_t yyscanner );
 
-int CodesIOKernel_get_column  (yyscan_t yyscanner );
+int cfgp_get_column  (yyscan_t yyscanner );
 
-void CodesIOKernel_set_column (int column_no ,yyscan_t yyscanner );
+void cfgp_set_column (int column_no ,yyscan_t yyscanner );
 
-YYSTYPE * CodesIOKernel_get_lval (yyscan_t yyscanner );
+YYSTYPE * cfgp_get_lval (yyscan_t yyscanner );
 
-void CodesIOKernel_set_lval (YYSTYPE * yylval_param ,yyscan_t yyscanner );
+void cfgp_set_lval (YYSTYPE * yylval_param ,yyscan_t yyscanner );
 
-       YYLTYPE *CodesIOKernel_get_lloc (yyscan_t yyscanner );
+       YYLTYPE *cfgp_get_lloc (yyscan_t yyscanner );
     
-        void CodesIOKernel_set_lloc (YYLTYPE * yylloc_param ,yyscan_t yyscanner );
+        void cfgp_set_lloc (YYLTYPE * yylloc_param ,yyscan_t yyscanner );
     
 /* Macros after this point can all be overridden by user definitions in
  * section 1.
@@ -673,12 +625,14 @@ void CodesIOKernel_set_lval (YYSTYPE * yylval_param ,yyscan_t yyscanner );
 
 #ifndef YY_SKIP_YYWRAP
 #ifdef __cplusplus
-extern "C" int CodesIOKernel_wrap (yyscan_t yyscanner );
+extern "C" int cfgp_wrap (yyscan_t yyscanner );
 #else
-extern int CodesIOKernel_wrap (yyscan_t yyscanner );
+extern int cfgp_wrap (yyscan_t yyscanner );
 #endif
 #endif
 
+    static void yyunput (int c,char *buf_ptr  ,yyscan_t yyscanner);
+    
 #ifndef yytext_ptr
 static void yy_flex_strncpy (char *,yyconst char *,int ,yyscan_t yyscanner);
 #endif
@@ -697,6 +651,12 @@ static int input (yyscan_t yyscanner );
 
 #endif
 
+    static void yy_push_state (int new_state ,yyscan_t yyscanner);
+    
+    static void yy_pop_state (yyscan_t yyscanner );
+    
+    static int yy_top_state (yyscan_t yyscanner );
+    
 /* Amount of stuff to slurp up with each read. */
 #ifndef YY_READ_BUF_SIZE
 #define YY_READ_BUF_SIZE 8192
@@ -772,10 +732,10 @@ static int input (yyscan_t yyscanner );
 #ifndef YY_DECL
 #define YY_DECL_IS_OURS 1
 
-extern int CodesIOKernel_lex \
+extern int cfgp_lex \
                (YYSTYPE * yylval_param,YYLTYPE * yylloc_param ,yyscan_t yyscanner);
 
-#define YY_DECL int CodesIOKernel_lex \
+#define YY_DECL int cfgp_lex \
                (YYSTYPE * yylval_param, YYLTYPE * yylloc_param , yyscan_t yyscanner)
 #endif /* !YY_DECL */
 
@@ -803,10 +763,10 @@ YY_DECL
 	register int yy_act;
     struct yyguts_t * yyg = (struct yyguts_t*)yyscanner;
 
-#line 43 "../src/iokernellang/codeslexer.l"
+#line 51 "../src/modelconfig/configlex.l"
 
 
-#line 810 "../src/iokernellang/codeslexer.c"
+#line 770 "src/modelconfig/configlex.c"
 
     yylval = yylval_param;
 
@@ -830,12 +790,12 @@ YY_DECL
 			yyout = stdout;
 
 		if ( ! YY_CURRENT_BUFFER ) {
-			CodesIOKernel_ensure_buffer_stack (yyscanner);
+			cfgp_ensure_buffer_stack (yyscanner);
 			YY_CURRENT_BUFFER_LVALUE =
-				CodesIOKernel__create_buffer(yyin,YY_BUF_SIZE ,yyscanner);
+				cfgp__create_buffer(yyin,YY_BUF_SIZE ,yyscanner);
 		}
 
-		CodesIOKernel__load_buffer_state(yyscanner );
+		cfgp__load_buffer_state(yyscanner );
 		}
 
 	while ( 1 )		/* loops until end-of-file is reached */
@@ -863,13 +823,13 @@ yy_match:
 			while ( yy_chk[yy_base[yy_current_state] + yy_c] != yy_current_state )
 				{
 				yy_current_state = (int) yy_def[yy_current_state];
-				if ( yy_current_state >= 134 )
+				if ( yy_current_state >= 56 )
 					yy_c = yy_meta[(unsigned int) yy_c];
 				}
 			yy_current_state = yy_nxt[yy_base[yy_current_state] + (unsigned int) yy_c];
 			++yy_cp;
 			}
-		while ( yy_base[yy_current_state] != 151 );
+		while ( yy_base[yy_current_state] != 102 );
 
 yy_find_action:
 		yy_act = yy_accept[yy_current_state];
@@ -881,18 +841,6 @@ yy_find_action:
 			}
 
 		YY_DO_BEFORE_ACTION;
-
-		if ( yy_act != YY_END_OF_BUFFER && yy_rule_can_match_eol[yy_act] )
-			{
-			yy_size_t yyl;
-			for ( yyl = 0; yyl < yyleng; ++yyl )
-				if ( yytext[yyl] == '\n' )
-					   
-    do{ yylineno++;
-        yycolumn=0;
-    }while(0)
-;
-			}
 
 do_action:	/* This label is used only to access EOF actions. */
 
@@ -907,218 +855,311 @@ do_action:	/* This label is used only to access EOF actions. */
 
 case 1:
 YY_RULE_SETUP
-#line 45 "../src/iokernellang/codeslexer.l"
-{
-		if(yyextra->text != NULL)
-                {
-			free(yyextra->text);
-                }
-		yyextra->text = strdup(yytext);
-                yylval->sIndex = *(yyextra->text) - 'a';
-                return VARIABLE;
-            }
+#line 53 "../src/modelconfig/configlex.l"
+{ 
+                        LOC_COL_DEF_ADV;
+                        LOC_INIT_FIRST;
+                        /* ignore comments */
+                        yy_push_state(COMMENT2, yyscanner);
+                     }
 	YY_BREAK
 case 2:
 YY_RULE_SETUP
-#line 55 "../src/iokernellang/codeslexer.l"
+#line 60 "../src/modelconfig/configlex.l"
 {
-		if(yyextra->text != NULL)
-                {
-			free(yyextra->text);
-                }
-		yyextra->text = strdup(yytext);
-                yylval->iValue = atoi(yyextra->text);
-                return INTEGER;
-            }
+                        /* ignore comments */
+                        LOC_RESET_FIRST;
+                        yy_pop_state (yyscanner);  
+                     }
 	YY_BREAK
 case 3:
+/* rule 3 can match eol */
 YY_RULE_SETUP
-#line 65 "../src/iokernellang/codeslexer.l"
-{
-		if(yyextra->text != NULL)
-                {
-			free(yyextra->text);
-                }
-		yyextra->text = strdup(yytext);
-                yylval->iValue = atoll(yyextra->text);
-                return INTEGER;
-            }
+#line 66 "../src/modelconfig/configlex.l"
+{ LOC_LINE_ADV(1); } 
 	YY_BREAK
 case 4:
 YY_RULE_SETUP
-#line 75 "../src/iokernellang/codeslexer.l"
+#line 68 "../src/modelconfig/configlex.l"
+{ 
+                        LOC_COL_DEF_ADV;
+                        /* ignore comments */
+                      }
+	YY_BREAK
+case YY_STATE_EOF(COMMENT2):
+#line 73 "../src/modelconfig/configlex.l"
 {
-		if(yyextra->text != NULL)
-                {
-			free(yyextra->text);
-                }
-		yyextra->text = strdup(yytext);
-                return *(yyextra->text);
-             }
+                        char buf[512];
+                        snprintf (buf,sizeof(buf),
+                            "Unterminated /* (started at line %i, column %i)",
+                            yylloc->first_line, yylloc->first_column);
+
+                        return cfgp_lex_error (yyextra,
+                              yylloc->last_line,yylloc->last_column,  buf);
+                  }
 	YY_BREAK
 case 5:
 YY_RULE_SETUP
-#line 84 "../src/iokernellang/codeslexer.l"
-return GE;
+#line 83 "../src/modelconfig/configlex.l"
+{ LOC_COL_ADV(1); yy_push_state(COMMENT, yyscanner); }
 	YY_BREAK
 case 6:
 YY_RULE_SETUP
-#line 85 "../src/iokernellang/codeslexer.l"
-return LE;
+#line 84 "../src/modelconfig/configlex.l"
+{ LOC_COL_ADV(1); yy_push_state(COMMENT, yyscanner); }
 	YY_BREAK
 case 7:
+/* rule 7 can match eol */
 YY_RULE_SETUP
-#line 86 "../src/iokernellang/codeslexer.l"
-return EQ;
+#line 86 "../src/modelconfig/configlex.l"
+{ LOC_LINE_ADV(1); yy_pop_state( yyscanner ); }
 	YY_BREAK
 case 8:
 YY_RULE_SETUP
-#line 87 "../src/iokernellang/codeslexer.l"
-return NE;
+#line 87 "../src/modelconfig/configlex.l"
+{ LOC_COL_DEF_ADV; }
 	YY_BREAK
 case 9:
 YY_RULE_SETUP
-#line 88 "../src/iokernellang/codeslexer.l"
-return WHILE;
+#line 89 "../src/modelconfig/configlex.l"
+{ 
+                        LOC_COL_DEF_ADV;
+                        LOC_INIT_FIRST;
+                        yylval->curstringpos = 0;
+                        yy_push_state(STRING_LITERAL, yyscanner);
+                     }
 	YY_BREAK
 case 10:
 YY_RULE_SETUP
-#line 89 "../src/iokernellang/codeslexer.l"
-return IF;
+#line 97 "../src/modelconfig/configlex.l"
+{ 
+                                 /* saw closing quote - all done */
+                            LOC_COL_DEF_ADV;
+                            LOC_RESET_FIRST;
+                                 yy_pop_state(yyscanner);
+                                 CFGP_CHECKOVERFLOW;
+                                 yylval->string_buf[yylval->curstringpos] = '\0';
+                                 /* return string constant token type and
+                                  * value to parser
+                                  */
+                                 return LITERAL_STRING;
+                           }
 	YY_BREAK
 case 11:
+/* rule 11 can match eol */
 YY_RULE_SETUP
-#line 90 "../src/iokernellang/codeslexer.l"
-return ELSE;
+#line 110 "../src/modelconfig/configlex.l"
+{
+               char buf[512];
+               snprintf (buf, sizeof(buf), 
+                  "Unterminated string constant (started at line %i, column"
+                  " %i)!", yylloc->first_line, yylloc->first_column);
+               return cfgp_lex_error (yyextra, yylloc->last_line, yylloc->last_column,
+                     buf);
+        }
 	YY_BREAK
 case 12:
 YY_RULE_SETUP
-#line 91 "../src/iokernellang/codeslexer.l"
-return PRINT;
+#line 119 "../src/modelconfig/configlex.l"
+{
+        /* octal escape sequence */
+        LOC_COL_DEF_ADV;
+        int result;
+
+        (void) sscanf( yytext + 1, "%o", &result );
+
+        if ( result > 0xff )
+        {
+                /* error, constant is out-of-bounds */
+                return cfgp_lex_error (yyextra, yylloc->last_line, yylloc->last_column,
+                   "Out of bounds \\0xx escape in string!");
+        }
+
+        yylval->string_buf[yylval->curstringpos++] = result;
+        CFGP_CHECKOVERFLOW;
+        }
 	YY_BREAK
 case 13:
 YY_RULE_SETUP
-#line 92 "../src/iokernellang/codeslexer.l"
-return WRITE;
+#line 137 "../src/modelconfig/configlex.l"
+{
+        /* generate error - bad escape sequence; something
+         * like '\48' or '\0777777'
+         */
+                return cfgp_lex_error (yyextra, 
+                    yylloc->last_line, yylloc->last_column,
+                   "Bad \\xxxx escape in string!");
+        }
 	YY_BREAK
 case 14:
 YY_RULE_SETUP
-#line 93 "../src/iokernellang/codeslexer.l"
-return WRITEAT;
+#line 146 "../src/modelconfig/configlex.l"
+{ LOC_COL_DEF_ADV; yylval->string_buf[yylval->curstringpos++] = '\n'; CFGP_CHECKOVERFLOW; }
 	YY_BREAK
 case 15:
 YY_RULE_SETUP
-#line 94 "../src/iokernellang/codeslexer.l"
-return WRITE_ALL;
+#line 147 "../src/modelconfig/configlex.l"
+{ LOC_COL_DEF_ADV; yylval->string_buf[yylval->curstringpos++] = '\t'; CFGP_CHECKOVERFLOW; }
 	YY_BREAK
 case 16:
 YY_RULE_SETUP
-#line 95 "../src/iokernellang/codeslexer.l"
-return WRITEAT_ALL;
+#line 148 "../src/modelconfig/configlex.l"
+{ LOC_COL_DEF_ADV; yylval->string_buf[yylval->curstringpos++] = '\r'; CFGP_CHECKOVERFLOW; }
 	YY_BREAK
 case 17:
 YY_RULE_SETUP
-#line 96 "../src/iokernellang/codeslexer.l"
-return READ;
+#line 149 "../src/modelconfig/configlex.l"
+{ LOC_COL_DEF_ADV; yylval->string_buf[yylval->curstringpos++] = '\b'; CFGP_CHECKOVERFLOW; }
 	YY_BREAK
 case 18:
 YY_RULE_SETUP
-#line 97 "../src/iokernellang/codeslexer.l"
-return READAT;
+#line 150 "../src/modelconfig/configlex.l"
+{ LOC_COL_DEF_ADV; yylval->string_buf[yylval->curstringpos++] = '\f'; CFGP_CHECKOVERFLOW; }
 	YY_BREAK
 case 19:
+/* rule 19 can match eol */
 YY_RULE_SETUP
-#line 98 "../src/iokernellang/codeslexer.l"
-return READ_ALL;
+#line 152 "../src/modelconfig/configlex.l"
+{
+                LOC_LINE_ADV(1);
+                yylval->string_buf[yylval->curstringpos++] = yytext[1];
+                CFGP_CHECKOVERFLOW;
+                }
 	YY_BREAK
 case 20:
 YY_RULE_SETUP
-#line 99 "../src/iokernellang/codeslexer.l"
-return READAT_ALL;
+#line 158 "../src/modelconfig/configlex.l"
+{
+                LOC_COL_DEF_ADV;
+                yylval->string_buf[yylval->curstringpos++] = yytext[1];
+                CFGP_CHECKOVERFLOW;
+                }
 	YY_BREAK
 case 21:
 YY_RULE_SETUP
-#line 100 "../src/iokernellang/codeslexer.l"
-return SYNC;
+#line 164 "../src/modelconfig/configlex.l"
+{
+        char *yptr = yytext;
+
+        LOC_COL_DEF_ADV;
+
+        while ( *yptr )
+        {
+                yylval->string_buf[yylval->curstringpos++] = *yptr++;
+                CFGP_CHECKOVERFLOW;
+        }
+        }
 	YY_BREAK
 case 22:
 YY_RULE_SETUP
-#line 101 "../src/iokernellang/codeslexer.l"
-return DELETE;
+#line 176 "../src/modelconfig/configlex.l"
+{ 
+                   /* a single slash at the end of the input */
+                   char buf[512];
+                   snprintf (buf, sizeof(buf), "Unterminated string constant "
+                      "(started at line %i, column %i)!", yylloc->first_line, 
+                      yylloc->first_column);
+                          
+                   return cfgp_lex_error (yyextra, 
+                          yylloc->last_line, yylloc->last_column, buf);
+                 } 
 	YY_BREAK
 case 23:
 YY_RULE_SETUP
-#line 102 "../src/iokernellang/codeslexer.l"
-return SLEEP;
+#line 187 "../src/modelconfig/configlex.l"
+{
+                LOC_COL_DEF_ADV;
+                if (strlen (yytext) >= sizeof(yylval->string_buf))
+                {
+                     char buf[512];
+                     snprintf (buf, sizeof(buf), "ID too long: Maximum ID"
+                        " length is %lu bytes!", sizeof(yylval->string_buf));
+                     return cfgp_lex_error (yyextra, 
+                       yylloc->last_line, yylloc->last_column, buf);
+                }
+                strncpy (yylval->string_buf, yytext,  sizeof (yylval->string_buf)); 
+                return IDENTIFIER;
+                
+        }
 	YY_BREAK
 case 24:
 YY_RULE_SETUP
-#line 103 "../src/iokernellang/codeslexer.l"
-return OPEN;
+#line 202 "../src/modelconfig/configlex.l"
+{ LOC_COL_DEF_ADV; return OPENSECTION; }
 	YY_BREAK
 case 25:
 YY_RULE_SETUP
-#line 104 "../src/iokernellang/codeslexer.l"
-return CLOSE;
+#line 203 "../src/modelconfig/configlex.l"
+{ LOC_COL_DEF_ADV; return CLOSESECTION; }
 	YY_BREAK
 case 26:
 YY_RULE_SETUP
-#line 105 "../src/iokernellang/codeslexer.l"
-return FLUSH;
+#line 204 "../src/modelconfig/configlex.l"
+{ LOC_COL_DEF_ADV; return SEMICOLUMN; }
 	YY_BREAK
 case 27:
 YY_RULE_SETUP
-#line 106 "../src/iokernellang/codeslexer.l"
-return SEEK;
+#line 205 "../src/modelconfig/configlex.l"
+{ LOC_COL_DEF_ADV; return EQUAL_TOKEN; }
 	YY_BREAK
 case 28:
 YY_RULE_SETUP
-#line 107 "../src/iokernellang/codeslexer.l"
-return GETGROUPID;
+#line 206 "../src/modelconfig/configlex.l"
+{ LOC_COL_DEF_ADV; return KOMMA; }
 	YY_BREAK
 case 29:
 YY_RULE_SETUP
-#line 108 "../src/iokernellang/codeslexer.l"
-return GETNUMGROUPS;
+#line 207 "../src/modelconfig/configlex.l"
+{ LOC_COL_DEF_ADV; return LCLOSE; }
 	YY_BREAK
 case 30:
 YY_RULE_SETUP
-#line 109 "../src/iokernellang/codeslexer.l"
-return GETGROUPRANK;
+#line 208 "../src/modelconfig/configlex.l"
+{ LOC_COL_DEF_ADV; return LOPEN; }
 	YY_BREAK
 case 31:
 YY_RULE_SETUP
-#line 110 "../src/iokernellang/codeslexer.l"
-return GETGROUPSIZE;
+#line 210 "../src/modelconfig/configlex.l"
+{ 
+                        /* ignore whitespace */
+                        LOC_COL_DEF_ADV; 
+                    }
 	YY_BREAK
 case 32:
+/* rule 32 can match eol */
 YY_RULE_SETUP
-#line 111 "../src/iokernellang/codeslexer.l"
-return GETCURTIME;
+#line 215 "../src/modelconfig/configlex.l"
+{
+                        /* ignore EOL */
+                        LOC_LINE_ADV(1);
+                    }
 	YY_BREAK
+/* we could try to return chars not matching any token to the parser and
+   * have parser generate a useful error; tried that, parser gives output:
+   *    syntax error, unexpected $undefined, expecting OPENSECTION or EQUAL_TOKEN
+   * while the lexer error gives:
+   *     lexer error (line 1, column 11): Unexpected character: ':'
+   */
 case 33:
 YY_RULE_SETUP
-#line 112 "../src/iokernellang/codeslexer.l"
-return EXIT;
+#line 229 "../src/modelconfig/configlex.l"
+{ 
+                        char buf[256];
+                        snprintf (buf, sizeof(buf), "Unexpected character: '%c'", *yytext);
+                        return cfgp_lex_error (yyextra, yylloc->last_line,
+                          yylloc->last_column, buf);
+                    }
 	YY_BREAK
+/* .                   { return (int) *yytext; }*/
 case 34:
-/* rule 34 can match eol */
 YY_RULE_SETUP
-#line 114 "../src/iokernellang/codeslexer.l"
-;       /* ignore whitespace */
+#line 238 "../src/modelconfig/configlex.l"
+YY_FATAL_ERROR( "flex scanner jammed" );
 	YY_BREAK
-case 35:
-YY_RULE_SETUP
-#line 116 "../src/iokernellang/codeslexer.l"
-fprintf(stderr, "Unknown character\n");
-	YY_BREAK
-case 36:
-YY_RULE_SETUP
-#line 117 "../src/iokernellang/codeslexer.l"
-ECHO;
-	YY_BREAK
-#line 1121 "../src/iokernellang/codeslexer.c"
+#line 1160 "src/modelconfig/configlex.c"
 case YY_STATE_EOF(INITIAL):
+case YY_STATE_EOF(COMMENT):
+case YY_STATE_EOF(STRING_LITERAL):
 	yyterminate();
 
 	case YY_END_OF_BUFFER:
@@ -1135,7 +1176,7 @@ case YY_STATE_EOF(INITIAL):
 			/* We're scanning a new file or input source.  It's
 			 * possible that this happened because the user
 			 * just pointed yyin at a new source and called
-			 * CodesIOKernel_lex().  If so, then we have to assure
+			 * cfgp_lex().  If so, then we have to assure
 			 * consistency between YY_CURRENT_BUFFER and our
 			 * globals.  Here is the right place to do so, because
 			 * this is the first action (other than possibly a
@@ -1195,7 +1236,7 @@ case YY_STATE_EOF(INITIAL):
 				{
 				yyg->yy_did_buffer_switch_on_eof = 0;
 
-				if ( CodesIOKernel_wrap(yyscanner ) )
+				if ( cfgp_wrap(yyscanner ) )
 					{
 					/* Note: because we've taken care in
 					 * yy_get_next_buffer() to have set up
@@ -1248,7 +1289,7 @@ case YY_STATE_EOF(INITIAL):
 			"fatal flex scanner internal error--no action found" );
 	} /* end of action switch */
 		} /* end of scanning one token */
-} /* end of CodesIOKernel_lex */
+} /* end of cfgp_lex */
 
 /* yy_get_next_buffer - try to read in a new buffer
  *
@@ -1327,7 +1368,7 @@ static int yy_get_next_buffer (yyscan_t yyscanner)
 
 				b->yy_ch_buf = (char *)
 					/* Include room in for 2 EOB chars. */
-					CodesIOKernel_realloc((void *) b->yy_ch_buf,b->yy_buf_size + 2 ,yyscanner );
+					cfgp_realloc((void *) b->yy_ch_buf,b->yy_buf_size + 2 ,yyscanner );
 				}
 			else
 				/* Can't grow it, we don't own it. */
@@ -1359,7 +1400,7 @@ static int yy_get_next_buffer (yyscan_t yyscanner)
 		if ( number_to_move == YY_MORE_ADJ )
 			{
 			ret_val = EOB_ACT_END_OF_FILE;
-			CodesIOKernel_restart(yyin  ,yyscanner);
+			cfgp_restart(yyin  ,yyscanner);
 			}
 
 		else
@@ -1376,7 +1417,7 @@ static int yy_get_next_buffer (yyscan_t yyscanner)
 	if ((yy_size_t) (yyg->yy_n_chars + number_to_move) > YY_CURRENT_BUFFER_LVALUE->yy_buf_size) {
 		/* Extend the array by 50%, plus the number we really need. */
 		yy_size_t new_size = yyg->yy_n_chars + number_to_move + (yyg->yy_n_chars >> 1);
-		YY_CURRENT_BUFFER_LVALUE->yy_ch_buf = (char *) CodesIOKernel_realloc((void *) YY_CURRENT_BUFFER_LVALUE->yy_ch_buf,new_size ,yyscanner );
+		YY_CURRENT_BUFFER_LVALUE->yy_ch_buf = (char *) cfgp_realloc((void *) YY_CURRENT_BUFFER_LVALUE->yy_ch_buf,new_size ,yyscanner );
 		if ( ! YY_CURRENT_BUFFER_LVALUE->yy_ch_buf )
 			YY_FATAL_ERROR( "out of dynamic memory in yy_get_next_buffer()" );
 	}
@@ -1411,7 +1452,7 @@ static int yy_get_next_buffer (yyscan_t yyscanner)
 		while ( yy_chk[yy_base[yy_current_state] + yy_c] != yy_current_state )
 			{
 			yy_current_state = (int) yy_def[yy_current_state];
-			if ( yy_current_state >= 134 )
+			if ( yy_current_state >= 56 )
 				yy_c = yy_meta[(unsigned int) yy_c];
 			}
 		yy_current_state = yy_nxt[yy_base[yy_current_state] + (unsigned int) yy_c];
@@ -1440,14 +1481,52 @@ static int yy_get_next_buffer (yyscan_t yyscanner)
 	while ( yy_chk[yy_base[yy_current_state] + yy_c] != yy_current_state )
 		{
 		yy_current_state = (int) yy_def[yy_current_state];
-		if ( yy_current_state >= 134 )
+		if ( yy_current_state >= 56 )
 			yy_c = yy_meta[(unsigned int) yy_c];
 		}
 	yy_current_state = yy_nxt[yy_base[yy_current_state] + (unsigned int) yy_c];
-	yy_is_jam = (yy_current_state == 133);
+	yy_is_jam = (yy_current_state == 55);
 
 	(void)yyg;
 	return yy_is_jam ? 0 : yy_current_state;
+}
+
+    static void yyunput (int c, register char * yy_bp , yyscan_t yyscanner)
+{
+	register char *yy_cp;
+    struct yyguts_t * yyg = (struct yyguts_t*)yyscanner;
+
+    yy_cp = yyg->yy_c_buf_p;
+
+	/* undo effects of setting up yytext */
+	*yy_cp = yyg->yy_hold_char;
+
+	if ( yy_cp < YY_CURRENT_BUFFER_LVALUE->yy_ch_buf + 2 )
+		{ /* need to shift things up to make room */
+		/* +2 for EOB chars. */
+		register yy_size_t number_to_move = yyg->yy_n_chars + 2;
+		register char *dest = &YY_CURRENT_BUFFER_LVALUE->yy_ch_buf[
+					YY_CURRENT_BUFFER_LVALUE->yy_buf_size + 2];
+		register char *source =
+				&YY_CURRENT_BUFFER_LVALUE->yy_ch_buf[number_to_move];
+
+		while ( source > YY_CURRENT_BUFFER_LVALUE->yy_ch_buf )
+			*--dest = *--source;
+
+		yy_cp += (int) (dest - source);
+		yy_bp += (int) (dest - source);
+		YY_CURRENT_BUFFER_LVALUE->yy_n_chars =
+			yyg->yy_n_chars = YY_CURRENT_BUFFER_LVALUE->yy_buf_size;
+
+		if ( yy_cp < YY_CURRENT_BUFFER_LVALUE->yy_ch_buf + 2 )
+			YY_FATAL_ERROR( "flex scanner push-back overflow" );
+		}
+
+	*--yy_cp = (char) c;
+
+	yyg->yytext_ptr = yy_bp;
+	yyg->yy_hold_char = *yy_cp;
+	yyg->yy_c_buf_p = yy_cp;
 }
 
 #ifndef YY_NO_INPUT
@@ -1492,13 +1571,13 @@ static int yy_get_next_buffer (yyscan_t yyscanner)
 					 */
 
 					/* Reset buffer status. */
-					CodesIOKernel_restart(yyin ,yyscanner);
+					cfgp_restart(yyin ,yyscanner);
 
 					/*FALLTHROUGH*/
 
 				case EOB_ACT_END_OF_FILE:
 					{
-					if ( CodesIOKernel_wrap(yyscanner ) )
+					if ( cfgp_wrap(yyscanner ) )
 						return EOF;
 
 					if ( ! yyg->yy_did_buffer_switch_on_eof )
@@ -1521,13 +1600,6 @@ static int yy_get_next_buffer (yyscan_t yyscanner)
 	*yyg->yy_c_buf_p = '\0';	/* preserve yytext */
 	yyg->yy_hold_char = *++yyg->yy_c_buf_p;
 
-	if ( c == '\n' )
-		   
-    do{ yylineno++;
-        yycolumn=0;
-    }while(0)
-;
-
 	return c;
 }
 #endif	/* ifndef YY_NO_INPUT */
@@ -1537,34 +1609,34 @@ static int yy_get_next_buffer (yyscan_t yyscanner)
  * @param yyscanner The scanner object.
  * @note This function does not reset the start condition to @c INITIAL .
  */
-    void CodesIOKernel_restart  (FILE * input_file , yyscan_t yyscanner)
+    void cfgp_restart  (FILE * input_file , yyscan_t yyscanner)
 {
     struct yyguts_t * yyg = (struct yyguts_t*)yyscanner;
 
 	if ( ! YY_CURRENT_BUFFER ){
-        CodesIOKernel_ensure_buffer_stack (yyscanner);
+        cfgp_ensure_buffer_stack (yyscanner);
 		YY_CURRENT_BUFFER_LVALUE =
-            CodesIOKernel__create_buffer(yyin,YY_BUF_SIZE ,yyscanner);
+            cfgp__create_buffer(yyin,YY_BUF_SIZE ,yyscanner);
 	}
 
-	CodesIOKernel__init_buffer(YY_CURRENT_BUFFER,input_file ,yyscanner);
-	CodesIOKernel__load_buffer_state(yyscanner );
+	cfgp__init_buffer(YY_CURRENT_BUFFER,input_file ,yyscanner);
+	cfgp__load_buffer_state(yyscanner );
 }
 
 /** Switch to a different input buffer.
  * @param new_buffer The new input buffer.
  * @param yyscanner The scanner object.
  */
-    void CodesIOKernel__switch_to_buffer  (YY_BUFFER_STATE  new_buffer , yyscan_t yyscanner)
+    void cfgp__switch_to_buffer  (YY_BUFFER_STATE  new_buffer , yyscan_t yyscanner)
 {
     struct yyguts_t * yyg = (struct yyguts_t*)yyscanner;
 
 	/* TODO. We should be able to replace this entire function body
 	 * with
-	 *		CodesIOKernel_pop_buffer_state();
-	 *		CodesIOKernel_push_buffer_state(new_buffer);
+	 *		cfgp_pop_buffer_state();
+	 *		cfgp_push_buffer_state(new_buffer);
      */
-	CodesIOKernel_ensure_buffer_stack (yyscanner);
+	cfgp_ensure_buffer_stack (yyscanner);
 	if ( YY_CURRENT_BUFFER == new_buffer )
 		return;
 
@@ -1577,17 +1649,17 @@ static int yy_get_next_buffer (yyscan_t yyscanner)
 		}
 
 	YY_CURRENT_BUFFER_LVALUE = new_buffer;
-	CodesIOKernel__load_buffer_state(yyscanner );
+	cfgp__load_buffer_state(yyscanner );
 
 	/* We don't actually know whether we did this switch during
-	 * EOF (CodesIOKernel_wrap()) processing, but the only time this flag
-	 * is looked at is after CodesIOKernel_wrap() is called, so it's safe
+	 * EOF (cfgp_wrap()) processing, but the only time this flag
+	 * is looked at is after cfgp_wrap() is called, so it's safe
 	 * to go ahead and always set it.
 	 */
 	yyg->yy_did_buffer_switch_on_eof = 1;
 }
 
-static void CodesIOKernel__load_buffer_state  (yyscan_t yyscanner)
+static void cfgp__load_buffer_state  (yyscan_t yyscanner)
 {
     struct yyguts_t * yyg = (struct yyguts_t*)yyscanner;
 	yyg->yy_n_chars = YY_CURRENT_BUFFER_LVALUE->yy_n_chars;
@@ -1602,35 +1674,35 @@ static void CodesIOKernel__load_buffer_state  (yyscan_t yyscanner)
  * @param yyscanner The scanner object.
  * @return the allocated buffer state.
  */
-    YY_BUFFER_STATE CodesIOKernel__create_buffer  (FILE * file, int  size , yyscan_t yyscanner)
+    YY_BUFFER_STATE cfgp__create_buffer  (FILE * file, int  size , yyscan_t yyscanner)
 {
 	YY_BUFFER_STATE b;
     
-	b = (YY_BUFFER_STATE) CodesIOKernel_alloc(sizeof( struct yy_buffer_state ) ,yyscanner );
+	b = (YY_BUFFER_STATE) cfgp_alloc(sizeof( struct yy_buffer_state ) ,yyscanner );
 	if ( ! b )
-		YY_FATAL_ERROR( "out of dynamic memory in CodesIOKernel__create_buffer()" );
+		YY_FATAL_ERROR( "out of dynamic memory in cfgp__create_buffer()" );
 
 	b->yy_buf_size = size;
 
 	/* yy_ch_buf has to be 2 characters longer than the size given because
 	 * we need to put in 2 end-of-buffer characters.
 	 */
-	b->yy_ch_buf = (char *) CodesIOKernel_alloc(b->yy_buf_size + 2 ,yyscanner );
+	b->yy_ch_buf = (char *) cfgp_alloc(b->yy_buf_size + 2 ,yyscanner );
 	if ( ! b->yy_ch_buf )
-		YY_FATAL_ERROR( "out of dynamic memory in CodesIOKernel__create_buffer()" );
+		YY_FATAL_ERROR( "out of dynamic memory in cfgp__create_buffer()" );
 
 	b->yy_is_our_buffer = 1;
 
-	CodesIOKernel__init_buffer(b,file ,yyscanner);
+	cfgp__init_buffer(b,file ,yyscanner);
 
 	return b;
 }
 
 /** Destroy the buffer.
- * @param b a buffer created with CodesIOKernel__create_buffer()
+ * @param b a buffer created with cfgp__create_buffer()
  * @param yyscanner The scanner object.
  */
-    void CodesIOKernel__delete_buffer (YY_BUFFER_STATE  b , yyscan_t yyscanner)
+    void cfgp__delete_buffer (YY_BUFFER_STATE  b , yyscan_t yyscanner)
 {
     struct yyguts_t * yyg = (struct yyguts_t*)yyscanner;
 
@@ -1641,28 +1713,28 @@ static void CodesIOKernel__load_buffer_state  (yyscan_t yyscanner)
 		YY_CURRENT_BUFFER_LVALUE = (YY_BUFFER_STATE) 0;
 
 	if ( b->yy_is_our_buffer )
-		CodesIOKernel_free((void *) b->yy_ch_buf ,yyscanner );
+		cfgp_free((void *) b->yy_ch_buf ,yyscanner );
 
-	CodesIOKernel_free((void *) b ,yyscanner );
+	cfgp_free((void *) b ,yyscanner );
 }
 
 /* Initializes or reinitializes a buffer.
  * This function is sometimes called more than once on the same buffer,
- * such as during a CodesIOKernel_restart() or at EOF.
+ * such as during a cfgp_restart() or at EOF.
  */
-    static void CodesIOKernel__init_buffer  (YY_BUFFER_STATE  b, FILE * file , yyscan_t yyscanner)
+    static void cfgp__init_buffer  (YY_BUFFER_STATE  b, FILE * file , yyscan_t yyscanner)
 
 {
 	int oerrno = errno;
     struct yyguts_t * yyg = (struct yyguts_t*)yyscanner;
 
-	CodesIOKernel__flush_buffer(b ,yyscanner);
+	cfgp__flush_buffer(b ,yyscanner);
 
 	b->yy_input_file = file;
 	b->yy_fill_buffer = 1;
 
-    /* If b is the current buffer, then CodesIOKernel__init_buffer was _probably_
-     * called from CodesIOKernel_restart() or through yy_get_next_buffer.
+    /* If b is the current buffer, then cfgp__init_buffer was _probably_
+     * called from cfgp_restart() or through yy_get_next_buffer.
      * In that case, we don't want to reset the lineno or column.
      */
     if (b != YY_CURRENT_BUFFER){
@@ -1679,7 +1751,7 @@ static void CodesIOKernel__load_buffer_state  (yyscan_t yyscanner)
  * @param b the buffer state to be flushed, usually @c YY_CURRENT_BUFFER.
  * @param yyscanner The scanner object.
  */
-    void CodesIOKernel__flush_buffer (YY_BUFFER_STATE  b , yyscan_t yyscanner)
+    void cfgp__flush_buffer (YY_BUFFER_STATE  b , yyscan_t yyscanner)
 {
     struct yyguts_t * yyg = (struct yyguts_t*)yyscanner;
 	if ( ! b )
@@ -1700,7 +1772,7 @@ static void CodesIOKernel__load_buffer_state  (yyscan_t yyscanner)
 	b->yy_buffer_status = YY_BUFFER_NEW;
 
 	if ( b == YY_CURRENT_BUFFER )
-		CodesIOKernel__load_buffer_state(yyscanner );
+		cfgp__load_buffer_state(yyscanner );
 }
 
 /** Pushes the new state onto the stack. The new state becomes
@@ -1709,15 +1781,15 @@ static void CodesIOKernel__load_buffer_state  (yyscan_t yyscanner)
  *  @param new_buffer The new state.
  *  @param yyscanner The scanner object.
  */
-void CodesIOKernel_push_buffer_state (YY_BUFFER_STATE new_buffer , yyscan_t yyscanner)
+void cfgp_push_buffer_state (YY_BUFFER_STATE new_buffer , yyscan_t yyscanner)
 {
     struct yyguts_t * yyg = (struct yyguts_t*)yyscanner;
 	if (new_buffer == NULL)
 		return;
 
-	CodesIOKernel_ensure_buffer_stack(yyscanner);
+	cfgp_ensure_buffer_stack(yyscanner);
 
-	/* This block is copied from CodesIOKernel__switch_to_buffer. */
+	/* This block is copied from cfgp__switch_to_buffer. */
 	if ( YY_CURRENT_BUFFER )
 		{
 		/* Flush out information for old buffer. */
@@ -1731,8 +1803,8 @@ void CodesIOKernel_push_buffer_state (YY_BUFFER_STATE new_buffer , yyscan_t yysc
 		yyg->yy_buffer_stack_top++;
 	YY_CURRENT_BUFFER_LVALUE = new_buffer;
 
-	/* copied from CodesIOKernel__switch_to_buffer. */
-	CodesIOKernel__load_buffer_state(yyscanner );
+	/* copied from cfgp__switch_to_buffer. */
+	cfgp__load_buffer_state(yyscanner );
 	yyg->yy_did_buffer_switch_on_eof = 1;
 }
 
@@ -1740,19 +1812,19 @@ void CodesIOKernel_push_buffer_state (YY_BUFFER_STATE new_buffer , yyscan_t yysc
  *  The next element becomes the new top.
  *  @param yyscanner The scanner object.
  */
-void CodesIOKernel_pop_buffer_state (yyscan_t yyscanner)
+void cfgp_pop_buffer_state (yyscan_t yyscanner)
 {
     struct yyguts_t * yyg = (struct yyguts_t*)yyscanner;
 	if (!YY_CURRENT_BUFFER)
 		return;
 
-	CodesIOKernel__delete_buffer(YY_CURRENT_BUFFER ,yyscanner);
+	cfgp__delete_buffer(YY_CURRENT_BUFFER ,yyscanner);
 	YY_CURRENT_BUFFER_LVALUE = NULL;
 	if (yyg->yy_buffer_stack_top > 0)
 		--yyg->yy_buffer_stack_top;
 
 	if (YY_CURRENT_BUFFER) {
-		CodesIOKernel__load_buffer_state(yyscanner );
+		cfgp__load_buffer_state(yyscanner );
 		yyg->yy_did_buffer_switch_on_eof = 1;
 	}
 }
@@ -1760,7 +1832,7 @@ void CodesIOKernel_pop_buffer_state (yyscan_t yyscanner)
 /* Allocates the stack if it does not exist.
  *  Guarantees space for at least one push.
  */
-static void CodesIOKernel_ensure_buffer_stack (yyscan_t yyscanner)
+static void cfgp_ensure_buffer_stack (yyscan_t yyscanner)
 {
 	yy_size_t num_to_alloc;
     struct yyguts_t * yyg = (struct yyguts_t*)yyscanner;
@@ -1772,11 +1844,11 @@ static void CodesIOKernel_ensure_buffer_stack (yyscan_t yyscanner)
 		 * immediate realloc on the next call.
          */
 		num_to_alloc = 1;
-		yyg->yy_buffer_stack = (struct yy_buffer_state**)CodesIOKernel_alloc
+		yyg->yy_buffer_stack = (struct yy_buffer_state**)cfgp_alloc
 								(num_to_alloc * sizeof(struct yy_buffer_state*)
 								, yyscanner);
 		if ( ! yyg->yy_buffer_stack )
-			YY_FATAL_ERROR( "out of dynamic memory in CodesIOKernel_ensure_buffer_stack()" );
+			YY_FATAL_ERROR( "out of dynamic memory in cfgp_ensure_buffer_stack()" );
 								  
 		memset(yyg->yy_buffer_stack, 0, num_to_alloc * sizeof(struct yy_buffer_state*));
 				
@@ -1791,12 +1863,12 @@ static void CodesIOKernel_ensure_buffer_stack (yyscan_t yyscanner)
 		int grow_size = 8 /* arbitrary grow size */;
 
 		num_to_alloc = yyg->yy_buffer_stack_max + grow_size;
-		yyg->yy_buffer_stack = (struct yy_buffer_state**)CodesIOKernel_realloc
+		yyg->yy_buffer_stack = (struct yy_buffer_state**)cfgp_realloc
 								(yyg->yy_buffer_stack,
 								num_to_alloc * sizeof(struct yy_buffer_state*)
 								, yyscanner);
 		if ( ! yyg->yy_buffer_stack )
-			YY_FATAL_ERROR( "out of dynamic memory in CodesIOKernel_ensure_buffer_stack()" );
+			YY_FATAL_ERROR( "out of dynamic memory in cfgp_ensure_buffer_stack()" );
 
 		/* zero only the new slots.*/
 		memset(yyg->yy_buffer_stack + yyg->yy_buffer_stack_max, 0, grow_size * sizeof(struct yy_buffer_state*));
@@ -1810,7 +1882,7 @@ static void CodesIOKernel_ensure_buffer_stack (yyscan_t yyscanner)
  * @param yyscanner The scanner object.
  * @return the newly allocated buffer state object. 
  */
-YY_BUFFER_STATE CodesIOKernel__scan_buffer  (char * base, yy_size_t  size , yyscan_t yyscanner)
+YY_BUFFER_STATE cfgp__scan_buffer  (char * base, yy_size_t  size , yyscan_t yyscanner)
 {
 	YY_BUFFER_STATE b;
     
@@ -1820,9 +1892,9 @@ YY_BUFFER_STATE CodesIOKernel__scan_buffer  (char * base, yy_size_t  size , yysc
 		/* They forgot to leave room for the EOB's. */
 		return 0;
 
-	b = (YY_BUFFER_STATE) CodesIOKernel_alloc(sizeof( struct yy_buffer_state ) ,yyscanner );
+	b = (YY_BUFFER_STATE) cfgp_alloc(sizeof( struct yy_buffer_state ) ,yyscanner );
 	if ( ! b )
-		YY_FATAL_ERROR( "out of dynamic memory in CodesIOKernel__scan_buffer()" );
+		YY_FATAL_ERROR( "out of dynamic memory in cfgp__scan_buffer()" );
 
 	b->yy_buf_size = size - 2;	/* "- 2" to take care of EOB's */
 	b->yy_buf_pos = b->yy_ch_buf = base;
@@ -1834,33 +1906,33 @@ YY_BUFFER_STATE CodesIOKernel__scan_buffer  (char * base, yy_size_t  size , yysc
 	b->yy_fill_buffer = 0;
 	b->yy_buffer_status = YY_BUFFER_NEW;
 
-	CodesIOKernel__switch_to_buffer(b ,yyscanner );
+	cfgp__switch_to_buffer(b ,yyscanner );
 
 	return b;
 }
 
-/** Setup the input buffer state to scan a string. The next call to CodesIOKernel_lex() will
+/** Setup the input buffer state to scan a string. The next call to cfgp_lex() will
  * scan from a @e copy of @a str.
  * @param yystr a NUL-terminated string to scan
  * @param yyscanner The scanner object.
  * @return the newly allocated buffer state object.
  * @note If you want to scan bytes that may contain NUL values, then use
- *       CodesIOKernel__scan_bytes() instead.
+ *       cfgp__scan_bytes() instead.
  */
-YY_BUFFER_STATE CodesIOKernel__scan_string (yyconst char * yystr , yyscan_t yyscanner)
+YY_BUFFER_STATE cfgp__scan_string (yyconst char * yystr , yyscan_t yyscanner)
 {
     
-	return CodesIOKernel__scan_bytes(yystr,strlen(yystr) ,yyscanner);
+	return cfgp__scan_bytes(yystr,strlen(yystr) ,yyscanner);
 }
 
-/** Setup the input buffer state to scan the given bytes. The next call to CodesIOKernel_lex() will
+/** Setup the input buffer state to scan the given bytes. The next call to cfgp_lex() will
  * scan from a @e copy of @a bytes.
  * @param yybytes the byte buffer to scan
  * @param _yybytes_len the number of bytes in the buffer pointed to by @a bytes.
  * @param yyscanner The scanner object.
  * @return the newly allocated buffer state object.
  */
-YY_BUFFER_STATE CodesIOKernel__scan_bytes  (yyconst char * yybytes, yy_size_t  _yybytes_len , yyscan_t yyscanner)
+YY_BUFFER_STATE cfgp__scan_bytes  (yyconst char * yybytes, yy_size_t  _yybytes_len , yyscan_t yyscanner)
 {
 	YY_BUFFER_STATE b;
 	char *buf;
@@ -1869,18 +1941,18 @@ YY_BUFFER_STATE CodesIOKernel__scan_bytes  (yyconst char * yybytes, yy_size_t  _
     
 	/* Get memory for full buffer, including space for trailing EOB's. */
 	n = _yybytes_len + 2;
-	buf = (char *) CodesIOKernel_alloc(n ,yyscanner );
+	buf = (char *) cfgp_alloc(n ,yyscanner );
 	if ( ! buf )
-		YY_FATAL_ERROR( "out of dynamic memory in CodesIOKernel__scan_bytes()" );
+		YY_FATAL_ERROR( "out of dynamic memory in cfgp__scan_bytes()" );
 
 	for ( i = 0; i < _yybytes_len; ++i )
 		buf[i] = yybytes[i];
 
 	buf[_yybytes_len] = buf[_yybytes_len+1] = YY_END_OF_BUFFER_CHAR;
 
-	b = CodesIOKernel__scan_buffer(buf,n ,yyscanner);
+	b = cfgp__scan_buffer(buf,n ,yyscanner);
 	if ( ! b )
-		YY_FATAL_ERROR( "bad buffer in CodesIOKernel__scan_bytes()" );
+		YY_FATAL_ERROR( "bad buffer in cfgp__scan_bytes()" );
 
 	/* It's okay to grow etc. this buffer, and we should throw it
 	 * away when we're done.
@@ -1888,6 +1960,46 @@ YY_BUFFER_STATE CodesIOKernel__scan_bytes  (yyconst char * yybytes, yy_size_t  _
 	b->yy_is_our_buffer = 1;
 
 	return b;
+}
+
+    static void yy_push_state (int  new_state , yyscan_t yyscanner)
+{
+    struct yyguts_t * yyg = (struct yyguts_t*)yyscanner;
+	if ( yyg->yy_start_stack_ptr >= yyg->yy_start_stack_depth )
+		{
+		yy_size_t new_size;
+
+		yyg->yy_start_stack_depth += YY_START_STACK_INCR;
+		new_size = yyg->yy_start_stack_depth * sizeof( int );
+
+		if ( ! yyg->yy_start_stack )
+			yyg->yy_start_stack = (int *) cfgp_alloc(new_size ,yyscanner );
+
+		else
+			yyg->yy_start_stack = (int *) cfgp_realloc((void *) yyg->yy_start_stack,new_size ,yyscanner );
+
+		if ( ! yyg->yy_start_stack )
+			YY_FATAL_ERROR( "out of memory expanding start-condition stack" );
+		}
+
+	yyg->yy_start_stack[yyg->yy_start_stack_ptr++] = YY_START;
+
+	BEGIN(new_state);
+}
+
+    static void yy_pop_state  (yyscan_t yyscanner)
+{
+    struct yyguts_t * yyg = (struct yyguts_t*)yyscanner;
+	if ( --yyg->yy_start_stack_ptr < 0 )
+		YY_FATAL_ERROR( "start-condition stack underflow" );
+
+	BEGIN(yyg->yy_start_stack[yyg->yy_start_stack_ptr]);
+}
+
+    static int yy_top_state  (yyscan_t yyscanner)
+{
+    struct yyguts_t * yyg = (struct yyguts_t*)yyscanner;
+	return yyg->yy_start_stack[yyg->yy_start_stack_ptr - 1];
 }
 
 #ifndef YY_EXIT_FAILURE
@@ -1922,7 +2034,7 @@ static void yy_fatal_error (yyconst char* msg , yyscan_t yyscanner)
 /** Get the user-defined data for this scanner.
  * @param yyscanner The scanner object.
  */
-YY_EXTRA_TYPE CodesIOKernel_get_extra  (yyscan_t yyscanner)
+YY_EXTRA_TYPE cfgp_get_extra  (yyscan_t yyscanner)
 {
     struct yyguts_t * yyg = (struct yyguts_t*)yyscanner;
     return yyextra;
@@ -1931,7 +2043,7 @@ YY_EXTRA_TYPE CodesIOKernel_get_extra  (yyscan_t yyscanner)
 /** Get the current line number.
  * @param yyscanner The scanner object.
  */
-int CodesIOKernel_get_lineno  (yyscan_t yyscanner)
+int cfgp_get_lineno  (yyscan_t yyscanner)
 {
     struct yyguts_t * yyg = (struct yyguts_t*)yyscanner;
     
@@ -1944,7 +2056,7 @@ int CodesIOKernel_get_lineno  (yyscan_t yyscanner)
 /** Get the current column number.
  * @param yyscanner The scanner object.
  */
-int CodesIOKernel_get_column  (yyscan_t yyscanner)
+int cfgp_get_column  (yyscan_t yyscanner)
 {
     struct yyguts_t * yyg = (struct yyguts_t*)yyscanner;
     
@@ -1957,7 +2069,7 @@ int CodesIOKernel_get_column  (yyscan_t yyscanner)
 /** Get the input stream.
  * @param yyscanner The scanner object.
  */
-FILE *CodesIOKernel_get_in  (yyscan_t yyscanner)
+FILE *cfgp_get_in  (yyscan_t yyscanner)
 {
     struct yyguts_t * yyg = (struct yyguts_t*)yyscanner;
     return yyin;
@@ -1966,7 +2078,7 @@ FILE *CodesIOKernel_get_in  (yyscan_t yyscanner)
 /** Get the output stream.
  * @param yyscanner The scanner object.
  */
-FILE *CodesIOKernel_get_out  (yyscan_t yyscanner)
+FILE *cfgp_get_out  (yyscan_t yyscanner)
 {
     struct yyguts_t * yyg = (struct yyguts_t*)yyscanner;
     return yyout;
@@ -1975,7 +2087,7 @@ FILE *CodesIOKernel_get_out  (yyscan_t yyscanner)
 /** Get the length of the current token.
  * @param yyscanner The scanner object.
  */
-yy_size_t CodesIOKernel_get_leng  (yyscan_t yyscanner)
+yy_size_t cfgp_get_leng  (yyscan_t yyscanner)
 {
     struct yyguts_t * yyg = (struct yyguts_t*)yyscanner;
     return yyleng;
@@ -1985,7 +2097,7 @@ yy_size_t CodesIOKernel_get_leng  (yyscan_t yyscanner)
  * @param yyscanner The scanner object.
  */
 
-char *CodesIOKernel_get_text  (yyscan_t yyscanner)
+char *cfgp_get_text  (yyscan_t yyscanner)
 {
     struct yyguts_t * yyg = (struct yyguts_t*)yyscanner;
     return yytext;
@@ -1995,7 +2107,7 @@ char *CodesIOKernel_get_text  (yyscan_t yyscanner)
  * @param user_defined The data to be associated with this scanner.
  * @param yyscanner The scanner object.
  */
-void CodesIOKernel_set_extra (YY_EXTRA_TYPE  user_defined , yyscan_t yyscanner)
+void cfgp_set_extra (YY_EXTRA_TYPE  user_defined , yyscan_t yyscanner)
 {
     struct yyguts_t * yyg = (struct yyguts_t*)yyscanner;
     yyextra = user_defined ;
@@ -2005,13 +2117,13 @@ void CodesIOKernel_set_extra (YY_EXTRA_TYPE  user_defined , yyscan_t yyscanner)
  * @param line_number
  * @param yyscanner The scanner object.
  */
-void CodesIOKernel_set_lineno (int  line_number , yyscan_t yyscanner)
+void cfgp_set_lineno (int  line_number , yyscan_t yyscanner)
 {
     struct yyguts_t * yyg = (struct yyguts_t*)yyscanner;
 
         /* lineno is only valid if an input buffer exists. */
         if (! YY_CURRENT_BUFFER )
-           YY_FATAL_ERROR( "CodesIOKernel_set_lineno called with no buffer" );
+           YY_FATAL_ERROR( "cfgp_set_lineno called with no buffer" );
     
     yylineno = line_number;
 }
@@ -2020,13 +2132,13 @@ void CodesIOKernel_set_lineno (int  line_number , yyscan_t yyscanner)
  * @param line_number
  * @param yyscanner The scanner object.
  */
-void CodesIOKernel_set_column (int  column_no , yyscan_t yyscanner)
+void cfgp_set_column (int  column_no , yyscan_t yyscanner)
 {
     struct yyguts_t * yyg = (struct yyguts_t*)yyscanner;
 
         /* column is only valid if an input buffer exists. */
         if (! YY_CURRENT_BUFFER )
-           YY_FATAL_ERROR( "CodesIOKernel_set_column called with no buffer" );
+           YY_FATAL_ERROR( "cfgp_set_column called with no buffer" );
     
     yycolumn = column_no;
 }
@@ -2035,27 +2147,27 @@ void CodesIOKernel_set_column (int  column_no , yyscan_t yyscanner)
  * input buffer.
  * @param in_str A readable stream.
  * @param yyscanner The scanner object.
- * @see CodesIOKernel__switch_to_buffer
+ * @see cfgp__switch_to_buffer
  */
-void CodesIOKernel_set_in (FILE *  in_str , yyscan_t yyscanner)
+void cfgp_set_in (FILE *  in_str , yyscan_t yyscanner)
 {
     struct yyguts_t * yyg = (struct yyguts_t*)yyscanner;
     yyin = in_str ;
 }
 
-void CodesIOKernel_set_out (FILE *  out_str , yyscan_t yyscanner)
+void cfgp_set_out (FILE *  out_str , yyscan_t yyscanner)
 {
     struct yyguts_t * yyg = (struct yyguts_t*)yyscanner;
     yyout = out_str ;
 }
 
-int CodesIOKernel_get_debug  (yyscan_t yyscanner)
+int cfgp_get_debug  (yyscan_t yyscanner)
 {
     struct yyguts_t * yyg = (struct yyguts_t*)yyscanner;
     return yy_flex_debug;
 }
 
-void CodesIOKernel_set_debug (int  bdebug , yyscan_t yyscanner)
+void cfgp_set_debug (int  bdebug , yyscan_t yyscanner)
 {
     struct yyguts_t * yyg = (struct yyguts_t*)yyscanner;
     yy_flex_debug = bdebug ;
@@ -2063,25 +2175,25 @@ void CodesIOKernel_set_debug (int  bdebug , yyscan_t yyscanner)
 
 /* Accessor methods for yylval and yylloc */
 
-YYSTYPE * CodesIOKernel_get_lval  (yyscan_t yyscanner)
+YYSTYPE * cfgp_get_lval  (yyscan_t yyscanner)
 {
     struct yyguts_t * yyg = (struct yyguts_t*)yyscanner;
     return yylval;
 }
 
-void CodesIOKernel_set_lval (YYSTYPE *  yylval_param , yyscan_t yyscanner)
+void cfgp_set_lval (YYSTYPE *  yylval_param , yyscan_t yyscanner)
 {
     struct yyguts_t * yyg = (struct yyguts_t*)yyscanner;
     yylval = yylval_param;
 }
 
-YYLTYPE *CodesIOKernel_get_lloc  (yyscan_t yyscanner)
+YYLTYPE *cfgp_get_lloc  (yyscan_t yyscanner)
 {
     struct yyguts_t * yyg = (struct yyguts_t*)yyscanner;
     return yylloc;
 }
     
-void CodesIOKernel_set_lloc (YYLTYPE *  yylloc_param , yyscan_t yyscanner)
+void cfgp_set_lloc (YYLTYPE *  yylloc_param , yyscan_t yyscanner)
 {
     struct yyguts_t * yyg = (struct yyguts_t*)yyscanner;
     yylloc = yylloc_param;
@@ -2089,12 +2201,12 @@ void CodesIOKernel_set_lloc (YYLTYPE *  yylloc_param , yyscan_t yyscanner)
     
 /* User-visible API */
 
-/* CodesIOKernel_lex_init is special because it creates the scanner itself, so it is
+/* cfgp_lex_init is special because it creates the scanner itself, so it is
  * the ONLY reentrant function that doesn't take the scanner as the last argument.
  * That's why we explicitly handle the declaration, instead of using our macros.
  */
 
-int CodesIOKernel_lex_init(yyscan_t* ptr_yy_globals)
+int cfgp_lex_init(yyscan_t* ptr_yy_globals)
 
 {
     if (ptr_yy_globals == NULL){
@@ -2102,7 +2214,7 @@ int CodesIOKernel_lex_init(yyscan_t* ptr_yy_globals)
         return 1;
     }
 
-    *ptr_yy_globals = (yyscan_t) CodesIOKernel_alloc ( sizeof( struct yyguts_t ), NULL );
+    *ptr_yy_globals = (yyscan_t) cfgp_alloc ( sizeof( struct yyguts_t ), NULL );
 
     if (*ptr_yy_globals == NULL){
         errno = ENOMEM;
@@ -2115,27 +2227,27 @@ int CodesIOKernel_lex_init(yyscan_t* ptr_yy_globals)
     return yy_init_globals ( *ptr_yy_globals );
 }
 
-/* CodesIOKernel_lex_init_extra has the same functionality as CodesIOKernel_lex_init, but follows the
+/* cfgp_lex_init_extra has the same functionality as cfgp_lex_init, but follows the
  * convention of taking the scanner as the last argument. Note however, that
  * this is a *pointer* to a scanner, as it will be allocated by this call (and
  * is the reason, too, why this function also must handle its own declaration).
- * The user defined value in the first argument will be available to CodesIOKernel_alloc in
+ * The user defined value in the first argument will be available to cfgp_alloc in
  * the yyextra field.
  */
 
-int CodesIOKernel_lex_init_extra(YY_EXTRA_TYPE yy_user_defined,yyscan_t* ptr_yy_globals )
+int cfgp_lex_init_extra(YY_EXTRA_TYPE yy_user_defined,yyscan_t* ptr_yy_globals )
 
 {
     struct yyguts_t dummy_yyguts;
 
-    CodesIOKernel_set_extra (yy_user_defined, &dummy_yyguts);
+    cfgp_set_extra (yy_user_defined, &dummy_yyguts);
 
     if (ptr_yy_globals == NULL){
         errno = EINVAL;
         return 1;
     }
 	
-    *ptr_yy_globals = (yyscan_t) CodesIOKernel_alloc ( sizeof( struct yyguts_t ), &dummy_yyguts );
+    *ptr_yy_globals = (yyscan_t) cfgp_alloc ( sizeof( struct yyguts_t ), &dummy_yyguts );
 	
     if (*ptr_yy_globals == NULL){
         errno = ENOMEM;
@@ -2146,7 +2258,7 @@ int CodesIOKernel_lex_init_extra(YY_EXTRA_TYPE yy_user_defined,yyscan_t* ptr_yy_
     yy_init_globals. Leave at 0x00 for releases. */
     memset(*ptr_yy_globals,0x00,sizeof(struct yyguts_t));
     
-    CodesIOKernel_set_extra (yy_user_defined, *ptr_yy_globals);
+    cfgp_set_extra (yy_user_defined, *ptr_yy_globals);
     
     return yy_init_globals ( *ptr_yy_globals );
 }
@@ -2155,7 +2267,7 @@ static int yy_init_globals (yyscan_t yyscanner)
 {
     struct yyguts_t * yyg = (struct yyguts_t*)yyscanner;
     /* Initialization is the same as for the non-reentrant scanner.
-     * This function is called from CodesIOKernel_lex_destroy(), so don't allocate here.
+     * This function is called from cfgp_lex_destroy(), so don't allocate here.
      */
 
     yyg->yy_buffer_stack = 0;
@@ -2179,37 +2291,37 @@ static int yy_init_globals (yyscan_t yyscanner)
 #endif
 
     /* For future reference: Set errno on error, since we are called by
-     * CodesIOKernel_lex_init()
+     * cfgp_lex_init()
      */
     return 0;
 }
 
-/* CodesIOKernel_lex_destroy is for both reentrant and non-reentrant scanners. */
-int CodesIOKernel_lex_destroy  (yyscan_t yyscanner)
+/* cfgp_lex_destroy is for both reentrant and non-reentrant scanners. */
+int cfgp_lex_destroy  (yyscan_t yyscanner)
 {
     struct yyguts_t * yyg = (struct yyguts_t*)yyscanner;
 
     /* Pop the buffer stack, destroying each element. */
 	while(YY_CURRENT_BUFFER){
-		CodesIOKernel__delete_buffer(YY_CURRENT_BUFFER ,yyscanner );
+		cfgp__delete_buffer(YY_CURRENT_BUFFER ,yyscanner );
 		YY_CURRENT_BUFFER_LVALUE = NULL;
-		CodesIOKernel_pop_buffer_state(yyscanner);
+		cfgp_pop_buffer_state(yyscanner);
 	}
 
 	/* Destroy the stack itself. */
-	CodesIOKernel_free(yyg->yy_buffer_stack ,yyscanner);
+	cfgp_free(yyg->yy_buffer_stack ,yyscanner);
 	yyg->yy_buffer_stack = NULL;
 
     /* Destroy the start condition stack. */
-        CodesIOKernel_free(yyg->yy_start_stack ,yyscanner );
+        cfgp_free(yyg->yy_start_stack ,yyscanner );
         yyg->yy_start_stack = NULL;
 
     /* Reset the globals. This is important in a non-reentrant scanner so the next time
-     * CodesIOKernel_lex() is called, initialization will occur. */
+     * cfgp_lex() is called, initialization will occur. */
     yy_init_globals( yyscanner);
 
     /* Destroy the main struct (reentrant only). */
-    CodesIOKernel_free ( yyscanner , yyscanner );
+    cfgp_free ( yyscanner , yyscanner );
     yyscanner = NULL;
     return 0;
 }
@@ -2238,12 +2350,12 @@ static int yy_flex_strlen (yyconst char * s , yyscan_t yyscanner)
 }
 #endif
 
-void *CodesIOKernel_alloc (yy_size_t  size , yyscan_t yyscanner)
+void *cfgp_alloc (yy_size_t  size , yyscan_t yyscanner)
 {
 	return (void *) malloc( size );
 }
 
-void *CodesIOKernel_realloc  (void * ptr, yy_size_t  size , yyscan_t yyscanner)
+void *cfgp_realloc  (void * ptr, yy_size_t  size , yyscan_t yyscanner)
 {
 	/* The cast to (char *) in the following accommodates both
 	 * implementations that use char* generic pointers, and those
@@ -2255,61 +2367,19 @@ void *CodesIOKernel_realloc  (void * ptr, yy_size_t  size , yyscan_t yyscanner)
 	return (void *) realloc( (char *) ptr, size );
 }
 
-void CodesIOKernel_free (void * ptr , yyscan_t yyscanner)
+void cfgp_free (void * ptr , yyscan_t yyscanner)
 {
-	free( (char *) ptr );	/* see CodesIOKernel_realloc() for (char *) cast */
+	free( (char *) ptr );	/* see cfgp_realloc() for (char *) cast */
 }
 
 #define YYTABLES_NAME "yytables"
 
-#line 117 "../src/iokernellang/codeslexer.l"
+#line 238 "../src/modelconfig/configlex.l"
 
 
 
-void CodesIOKernelScannerInit(CodesIOKernelContext * context)
+void cfgp_setfile (FILE * f, yyscan_t scanner)
 {
-	CodesIOKernel_lex_init(&context->scanner_);
-	CodesIOKernel_set_extra(context,context->scanner_);
-	context->text = NULL;
-	context->lval = malloc(sizeof(YYSTYPE));
-	context->locval = CodesIOKernel_get_lloc(*(yyscan_t *)(context->scanner_));
-
-        //((YYLTYPE *)context->locval)->first_line = 1;
-
-	int i = 0;
-	for(i = 0 ; i < 26 ; i++)
-	{
-	    context->sym[i] = 0;
-	}
-
-        for(i = 0 ; i < 10 ; i++)
-        {
-            context->next_var[i] = 0;
-        }
-
-        for(i = 0 ; i < 10 ; i++)
-        {
-            context->var[i] = 0;
-        }
-
-        context->inst_ready = 0;
-}
-
-void CodesIOKernelScannerDestroy(CodesIOKernelContext * context)
-{
-	CodesIOKernel_lex_destroy(context->scanner_);
-	free(context->text);
-	context->text = NULL;
-	context->locval = NULL;
-	context->lval = NULL;
-}
-
-void CodesIOKernelScannerSetSymTable(CodesIOKernelContext * context)
-{
-	sym = &(context->sym[0]);
-        var = &(context->var[0]);
-        inst_ready = &(context->inst_ready);
-        group_rank = &(context->GroupRank);
-        group_size = &(context->GroupSize);
+   cfgp_set_in (f, scanner);
 }
 

@@ -1,0 +1,29 @@
+prefix = /home/bhowmik/installSoftware/codes-swm
+exec_prefix = ${prefix}
+libdir=${exec_prefix}/lib
+includedir=${prefix}/include
+ross_cflags=-I/home/bhowmik/installSoftware/ROSS-new/include  
+ross_libs=-Wl,-rpath,/home/bhowmik/installSoftware/ROSS-new/lib -L/home/bhowmik/installSoftware/ROSS-new/lib -lROSS -lm  
+darshan_libs=
+darshan_cflags=
+dumpi_cflags=
+dumpi_libs=
+cortex_cflags=
+cortex_libs=
+python_cflags=
+python_libs=
+boost_cflags=@BOOST_CFLAGS@
+boost_libs=@BOOST_LIBS@
+argobots_libs=-L/home/bhowmik/installSoftware/argobots/lib -labt -lrt -ldl -lpthread  
+argobots_cflags=-I/home/bhowmik/installSoftware/argobots/include  
+swm_libs=-L/home/bhowmik/installSoftware/swm-kev/lib -lswm  
+swm_cflags=-I/home/bhowmik/installSoftware/swm-kev/include  
+swm_datarootdir=/home/bhowmik/installSoftware/swm-kev/share
+
+Name: codes-base
+Description: Base functionality for CODES storage simulation
+Version: 1.2
+URL: https://github.com/codes-org/codes
+Requires:
+Libs: -L${libdir} -lcodes ${ross_libs} ${argobots_libs} ${swm_libs} ${darshan_libs} ${dumpi_libs} ${cortex_libs}
+Cflags: -I${includedir} -I${swm_datarootdir} ${ross_cflags} ${darshan_cflags} ${swm_cflags} ${argobots_cflags} ${dumpi_cflags} ${cortex_cflags}

@@ -1,10 +1,10 @@
-#ifndef CodesIOKernel_HEADER_H
-#define CodesIOKernel_HEADER_H 1
-#define CodesIOKernel_IN_HEADER 1
+#ifndef cfgp_HEADER_H
+#define cfgp_HEADER_H 1
+#define cfgp_IN_HEADER 1
 
-#line 6 "../src/iokernellang/codeslexer.h"
+#line 6 "src/modelconfig/configlex.h"
 
-#line 8 "../src/iokernellang/codeslexer.h"
+#line 8 "src/modelconfig/configlex.h"
 
 #define  YY_INT_ALIGNED short int
 
@@ -196,31 +196,34 @@ struct yy_buffer_state
 	};
 #endif /* !YY_STRUCT_YY_BUFFER_STATE */
 
-void CodesIOKernel_restart (FILE *input_file ,yyscan_t yyscanner );
-void CodesIOKernel__switch_to_buffer (YY_BUFFER_STATE new_buffer ,yyscan_t yyscanner );
-YY_BUFFER_STATE CodesIOKernel__create_buffer (FILE *file,int size ,yyscan_t yyscanner );
-void CodesIOKernel__delete_buffer (YY_BUFFER_STATE b ,yyscan_t yyscanner );
-void CodesIOKernel__flush_buffer (YY_BUFFER_STATE b ,yyscan_t yyscanner );
-void CodesIOKernel_push_buffer_state (YY_BUFFER_STATE new_buffer ,yyscan_t yyscanner );
-void CodesIOKernel_pop_buffer_state (yyscan_t yyscanner );
+void cfgp_restart (FILE *input_file ,yyscan_t yyscanner );
+void cfgp__switch_to_buffer (YY_BUFFER_STATE new_buffer ,yyscan_t yyscanner );
+YY_BUFFER_STATE cfgp__create_buffer (FILE *file,int size ,yyscan_t yyscanner );
+void cfgp__delete_buffer (YY_BUFFER_STATE b ,yyscan_t yyscanner );
+void cfgp__flush_buffer (YY_BUFFER_STATE b ,yyscan_t yyscanner );
+void cfgp_push_buffer_state (YY_BUFFER_STATE new_buffer ,yyscan_t yyscanner );
+void cfgp_pop_buffer_state (yyscan_t yyscanner );
 
-YY_BUFFER_STATE CodesIOKernel__scan_buffer (char *base,yy_size_t size ,yyscan_t yyscanner );
-YY_BUFFER_STATE CodesIOKernel__scan_string (yyconst char *yy_str ,yyscan_t yyscanner );
-YY_BUFFER_STATE CodesIOKernel__scan_bytes (yyconst char *bytes,yy_size_t len ,yyscan_t yyscanner );
+YY_BUFFER_STATE cfgp__scan_buffer (char *base,yy_size_t size ,yyscan_t yyscanner );
+YY_BUFFER_STATE cfgp__scan_string (yyconst char *yy_str ,yyscan_t yyscanner );
+YY_BUFFER_STATE cfgp__scan_bytes (yyconst char *bytes,yy_size_t len ,yyscan_t yyscanner );
 
-void *CodesIOKernel_alloc (yy_size_t ,yyscan_t yyscanner );
-void *CodesIOKernel_realloc (void *,yy_size_t ,yyscan_t yyscanner );
-void CodesIOKernel_free (void * ,yyscan_t yyscanner );
+void *cfgp_alloc (yy_size_t ,yyscan_t yyscanner );
+void *cfgp_realloc (void *,yy_size_t ,yyscan_t yyscanner );
+void cfgp_free (void * ,yyscan_t yyscanner );
 
 /* Begin user sect3 */
 
-#define CodesIOKernel_wrap(yyscanner) 1
+#define cfgp_wrap(yyscanner) 1
 #define YY_SKIP_YYWRAP
 
 #define yytext_ptr yytext_r
 
 #ifdef YY_HEADER_EXPORT_START_CONDITIONS
 #define INITIAL 0
+#define COMMENT 1
+#define STRING_LITERAL 2
+#define COMMENT2 3
 
 #endif
 
@@ -236,50 +239,50 @@ void CodesIOKernel_free (void * ,yyscan_t yyscanner );
 #define YY_EXTRA_TYPE void *
 #endif
 
-int CodesIOKernel_lex_init (yyscan_t* scanner);
+int cfgp_lex_init (yyscan_t* scanner);
 
-int CodesIOKernel_lex_init_extra (YY_EXTRA_TYPE user_defined,yyscan_t* scanner);
+int cfgp_lex_init_extra (YY_EXTRA_TYPE user_defined,yyscan_t* scanner);
 
 /* Accessor methods to globals.
    These are made visible to non-reentrant scanners for convenience. */
 
-int CodesIOKernel_lex_destroy (yyscan_t yyscanner );
+int cfgp_lex_destroy (yyscan_t yyscanner );
 
-int CodesIOKernel_get_debug (yyscan_t yyscanner );
+int cfgp_get_debug (yyscan_t yyscanner );
 
-void CodesIOKernel_set_debug (int debug_flag ,yyscan_t yyscanner );
+void cfgp_set_debug (int debug_flag ,yyscan_t yyscanner );
 
-YY_EXTRA_TYPE CodesIOKernel_get_extra (yyscan_t yyscanner );
+YY_EXTRA_TYPE cfgp_get_extra (yyscan_t yyscanner );
 
-void CodesIOKernel_set_extra (YY_EXTRA_TYPE user_defined ,yyscan_t yyscanner );
+void cfgp_set_extra (YY_EXTRA_TYPE user_defined ,yyscan_t yyscanner );
 
-FILE *CodesIOKernel_get_in (yyscan_t yyscanner );
+FILE *cfgp_get_in (yyscan_t yyscanner );
 
-void CodesIOKernel_set_in  (FILE * in_str ,yyscan_t yyscanner );
+void cfgp_set_in  (FILE * in_str ,yyscan_t yyscanner );
 
-FILE *CodesIOKernel_get_out (yyscan_t yyscanner );
+FILE *cfgp_get_out (yyscan_t yyscanner );
 
-void CodesIOKernel_set_out  (FILE * out_str ,yyscan_t yyscanner );
+void cfgp_set_out  (FILE * out_str ,yyscan_t yyscanner );
 
-yy_size_t CodesIOKernel_get_leng (yyscan_t yyscanner );
+yy_size_t cfgp_get_leng (yyscan_t yyscanner );
 
-char *CodesIOKernel_get_text (yyscan_t yyscanner );
+char *cfgp_get_text (yyscan_t yyscanner );
 
-int CodesIOKernel_get_lineno (yyscan_t yyscanner );
+int cfgp_get_lineno (yyscan_t yyscanner );
 
-void CodesIOKernel_set_lineno (int line_number ,yyscan_t yyscanner );
+void cfgp_set_lineno (int line_number ,yyscan_t yyscanner );
 
-int CodesIOKernel_get_column  (yyscan_t yyscanner );
+int cfgp_get_column  (yyscan_t yyscanner );
 
-void CodesIOKernel_set_column (int column_no ,yyscan_t yyscanner );
+void cfgp_set_column (int column_no ,yyscan_t yyscanner );
 
-YYSTYPE * CodesIOKernel_get_lval (yyscan_t yyscanner );
+YYSTYPE * cfgp_get_lval (yyscan_t yyscanner );
 
-void CodesIOKernel_set_lval (YYSTYPE * yylval_param ,yyscan_t yyscanner );
+void cfgp_set_lval (YYSTYPE * yylval_param ,yyscan_t yyscanner );
 
-       YYLTYPE *CodesIOKernel_get_lloc (yyscan_t yyscanner );
+       YYLTYPE *cfgp_get_lloc (yyscan_t yyscanner );
     
-        void CodesIOKernel_set_lloc (YYLTYPE * yylloc_param ,yyscan_t yyscanner );
+        void cfgp_set_lloc (YYLTYPE * yylloc_param ,yyscan_t yyscanner );
     
 /* Macros after this point can all be overridden by user definitions in
  * section 1.
@@ -287,9 +290,9 @@ void CodesIOKernel_set_lval (YYSTYPE * yylval_param ,yyscan_t yyscanner );
 
 #ifndef YY_SKIP_YYWRAP
 #ifdef __cplusplus
-extern "C" int CodesIOKernel_wrap (yyscan_t yyscanner );
+extern "C" int cfgp_wrap (yyscan_t yyscanner );
 #else
-extern int CodesIOKernel_wrap (yyscan_t yyscanner );
+extern int cfgp_wrap (yyscan_t yyscanner );
 #endif
 #endif
 
@@ -321,10 +324,10 @@ static int yy_flex_strlen (yyconst char * ,yyscan_t yyscanner);
 #ifndef YY_DECL
 #define YY_DECL_IS_OURS 1
 
-extern int CodesIOKernel_lex \
+extern int cfgp_lex \
                (YYSTYPE * yylval_param,YYLTYPE * yylloc_param ,yyscan_t yyscanner);
 
-#define YY_DECL int CodesIOKernel_lex \
+#define YY_DECL int cfgp_lex \
                (YYSTYPE * yylval_param, YYLTYPE * yylloc_param , yyscan_t yyscanner)
 #endif /* !YY_DECL */
 
@@ -342,9 +345,9 @@ extern int CodesIOKernel_lex \
 #undef YY_DECL
 #endif
 
-#line 117 "../src/iokernellang/codeslexer.l"
+#line 238 "../src/modelconfig/configlex.l"
 
 
-#line 349 "../src/iokernellang/codeslexer.h"
-#undef CodesIOKernel_IN_HEADER
-#endif /* CodesIOKernel_HEADER_H */
+#line 352 "src/modelconfig/configlex.h"
+#undef cfgp_IN_HEADER
+#endif /* cfgp_HEADER_H */
